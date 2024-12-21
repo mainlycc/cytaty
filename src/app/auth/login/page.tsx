@@ -1,8 +1,19 @@
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { GalleryVerticalEnd } from "lucide-react"
 import { Toaster } from "sonner"
 import { LoginForm } from "@/components/login-form"
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const supabase = createServerComponentClient({ cookies })
+  
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (session) {
+    redirect("/dashboard") // lub inna ścieżka dla zalogowanych użytkowników
+  }
+
   return (
     <>
       <Toaster />
