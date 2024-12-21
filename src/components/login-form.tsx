@@ -31,13 +31,13 @@ export function LoginForm({
     setLoading(true)
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: _error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) {
-        toast.error(error.message)
+      if (_error) {
+        toast.error(_error.message)
         return
       }
 
@@ -53,15 +53,15 @@ export function LoginForm({
 
   const handleOAuthLogin = async (provider: 'google' | 'apple') => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: _error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`
         }
       })
       
-      if (error) {
-        toast.error(error.message)
+      if (_error) {
+        toast.error(_error.message)
       }
     } catch (error) {
       toast.error("Wystąpił błąd podczas logowania")
