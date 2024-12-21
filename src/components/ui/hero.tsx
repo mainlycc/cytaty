@@ -1,37 +1,57 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
 import { QuoteCard } from '@/components/ui/quote-card'
 import { NavMenu } from '@/components/ui/nav-menu'
 
-const quotes = [
-  {
-    quote: "I'm going to make him an offer he can't refuse.",
-    movie: "The Godfather",
-    year: "1972"
-  },
-  {
-    quote: "Here's looking at you, kid.",
-    movie: "Casablanca",
-    year: "1942"
-  },
-  {
-    quote: "May the Force be with you.",
-    movie: "Star Wars",
-    year: "1977"
-  }
-]
+interface Quote {
+  id: string
+  quote: string
+  movie: string
+  year: string
+}
 
 export default function Hero() {
+  const [quotes, setQuotes] = useState<Quote[]>([])
   const [currentQuote, setCurrentQuote] = useState(0)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
+    async function fetchQuotes() {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('*')
+      
+      if (error) {
+        console.error('Błąd podczas pobierania cytatów:', error)
+        return
+      }
+
+      if (data) {
+        // Losowe przemieszanie cytatów
+        const shuffledQuotes = data.sort(() => Math.random() - 0.5)
+        setQuotes(shuffledQuotes)
+      }
+    }
+
+    fetchQuotes()
+  }, [])
+
+  useEffect(() => {
+    if (quotes.length === 0) return
+
     const timer = setInterval(() => {
       setCurrentQuote((prev) => (prev + 1) % quotes.length)
     }, 5000)
+    
     return () => clearInterval(timer)
-  }, [])
+  }, [quotes.length])
+
+  if (quotes.length === 0) {
+    return <div>Ładowanie cytatów...</div>
+  }
 
   return (
     <>
