@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import * as React from "react"
+import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { Button } from "@/components/ui/button"
-import { QuoteCard } from '@/components/ui/quote-card'
-import { NavMenu } from '@/components/ui/nav-menu'
+import { Button } from "@/app/components/ui/button"
+import { QuoteCard } from "@/app/components/ui/quote-card"
+import { NavMenu } from "@/app/components/ui/nav-menu"
 
 interface Quote {
   id: string

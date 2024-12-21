@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { GalleryVerticalEnd } from "lucide-react"
 import { Toaster } from "sonner"
-import { LoginForm } from "@/components/login-form"
+import { LoginForm } from "@/app/components/login-form"
 
 export default async function LoginPage() {
   const supabase = createServerComponentClient({ cookies })
