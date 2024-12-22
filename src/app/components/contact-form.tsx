@@ -14,6 +14,13 @@ import {
   CardTitle,
 } from "./ui/card"
 
+interface ContactFormProps {
+  currentUser?: {
+    email: string
+    name?: string
+  } | null
+}
+
 interface ContactFormData {
   name: string
   email: string
@@ -21,15 +28,13 @@ interface ContactFormData {
   message: string
 }
 
-const initialFormData: ContactFormData = {
-  name: "",
-  email: "",
-  subject: "",
-  message: ""
-}
-
-export function ContactForm() {
-  const [formData, setFormData] = useState<ContactFormData>(initialFormData)
+export function ContactForm({ currentUser }: ContactFormProps) {
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: currentUser?.name || "",
+    email: currentUser?.email || "",
+    subject: "",
+    message: ""
+  })
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,12 +42,15 @@ export function ContactForm() {
     setLoading(true)
 
     try {
-      // Tutaj możesz dodać logikę wysyłania emaila
-      // np. przez API route lub serwis zewnętrzny
+      // Tutaj logika wysyłania emaila
       console.log('Wysyłanie wiadomości:', formData)
       
       toast.success('Wiadomość została wysłana!')
-      setFormData(initialFormData)
+      setFormData(prev => ({
+        ...prev,
+        subject: "",
+        message: ""
+      }))
     } catch (error) {
       console.error('Błąd:', error)
       toast.error('Wystąpił błąd podczas wysyłania wiadomości')
@@ -68,32 +76,36 @@ export function ContactForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Imię i nazwisko</Label>
-            <Input
-              id="name"
-              name="name"
-              placeholder="Jan Kowalski"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              className="bg-zinc-900/50 border-zinc-800/80"
-            />
-          </div>
+          {!currentUser && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Imię i nazwisko</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Jan Kowalski"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="bg-zinc-900/50 border-zinc-800/80"
+                />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="jan@example.com"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="bg-zinc-900/50 border-zinc-800/80"
-            />
-          </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="jan@example.com"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="bg-zinc-900/50 border-zinc-800/80"
+                />
+              </div>
+            </>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="subject">Temat</Label>

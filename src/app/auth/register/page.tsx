@@ -8,8 +8,8 @@ export default function RegisterPage() {
       
       <NavMenu />
       
-      <main className="container mx-auto px-4 py-16 relative">
-        <div className="max-w-md mx-auto">
+      <main className="container mx-auto px-4 py-24 relative">
+        <div className="max-w-[400px] mx-auto">
           <RegisterForm className="w-full" />
         </div>
       </main>

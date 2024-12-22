@@ -19,14 +19,14 @@ const NavItem = ({ href, children, items }: { href: string; children: React.Reac
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-full px-4 py-2 text-white hover:text-red-500 transition-colors">
+          <Button variant="ghost" className="h-full px-4 py-2 text-white hover:text-red-500 transition-colors text-base">
             {children} <ChevronDown className="ml-1 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="bg-black/90 rounded-md">
           {items.map((item) => (
             <DropdownMenuItem key={item.href} asChild>
-              <Link href={item.href} className="block px-4 py-2 text-sm text-white hover:bg-red-500/20">
+              <Link href={item.href} className="block px-4 py-2 text-base text-white hover:bg-red-500/20">
                 {item.title}
               </Link>
             </DropdownMenuItem>
@@ -37,7 +37,7 @@ const NavItem = ({ href, children, items }: { href: string; children: React.Reac
   }
 
   return (
-    <Button variant="ghost" asChild className="h-full px-4 py-2 text-white hover:text-red-500 transition-colors">
+    <Button variant="ghost" asChild className="h-full px-4 py-2 text-white hover:text-red-500 transition-colors text-base">
       <Link href={href}>{children}</Link>
     </Button>
   )
@@ -71,15 +71,7 @@ export function NavMenu() {
           <div className="flex-1 flex items-center justify-center space-x-4 lg:space-x-6">
             <NavItem href="/">Strona główna</NavItem>
             <NavItem href="/movies">Filmy</NavItem>
-            <NavItem
-              href="/memy"
-              items={[
-                { title: "Generator memów", href: "/generator-memow" },
-                { title: "Ściana z memami", href: "/sciana-z-memami" },
-              ]}
-            >
-              Memy
-            </NavItem>
+            <NavItem href="/memy">Memy</NavItem>
             <NavItem href="/quizy">Quizy</NavItem>
             <NavItem href="/kontakt">Kontakt</NavItem>
           </div>
@@ -87,7 +79,7 @@ export function NavMenu() {
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
                 <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100">
+                  <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100 text-base">
                     Dashboard
                   </Button>
                 </Link>
@@ -95,7 +87,7 @@ export function NavMenu() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-zinc-400 hover:text-zinc-100 text-base"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -104,7 +96,7 @@ export function NavMenu() {
               </div>
             ) : (
               <Link href="/auth/login">
-                <Button variant="outline" className="bg-red-950/50 text-white border-red-800 hover:bg-red-900/50 flex items-center">
+                <Button variant="outline" className="bg-red-950/50 text-white border-red-800 hover:bg-red-900/50 flex items-center text-base">
                   <LogIn className="mr-2 h-4 w-4" /> Zaloguj się
                 </Button>
               </Link>

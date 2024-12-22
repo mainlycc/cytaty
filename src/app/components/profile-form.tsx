@@ -218,7 +218,7 @@ export default function ProfileForm({ defaultValues, onSuccess }: ProfileFormPro
                         value={formData.name}
                         onChange={handleChange}
                         className="bg-zinc-900/50 border-zinc-800/80 focus:border-zinc-700
-                                 focus:ring-zinc-800 placeholder:text-zinc-600"
+                                 focus:ring-zinc-800 placeholder:text-zinc-600 text-zinc-100"
                     />
                 </div>
 
@@ -233,7 +233,7 @@ export default function ProfileForm({ defaultValues, onSuccess }: ProfileFormPro
                         value={formData.username}
                         onChange={handleChange}
                         className="bg-zinc-900/50 border-zinc-800/80 focus:border-zinc-700
-                                 focus:ring-zinc-800 placeholder:text-zinc-600"
+                                 focus:ring-zinc-800 placeholder:text-zinc-600 text-zinc-100"
                     />
                 </div>
 
@@ -248,7 +248,7 @@ export default function ProfileForm({ defaultValues, onSuccess }: ProfileFormPro
                         value={formData.bio}
                         onChange={handleChange}
                         className="resize-none bg-zinc-900/50 border-zinc-800/80 focus:border-zinc-700
-                                 focus:ring-zinc-800 placeholder:text-zinc-600"
+                                 focus:ring-zinc-800 placeholder:text-zinc-600 text-zinc-100"
                         rows={4}
                     />
                 </div>
@@ -270,7 +270,7 @@ export default function ProfileForm({ defaultValues, onSuccess }: ProfileFormPro
                                     value={formData[social as keyof typeof formData]}
                                     onChange={handleChange}
                                     className="bg-zinc-900/50 border-zinc-800/80 focus:border-zinc-700
-                                             focus:ring-zinc-800 placeholder:text-zinc-600"
+                                             focus:ring-zinc-800 placeholder:text-zinc-600 text-zinc-100"
                                 />
                             </div>
                         ))}

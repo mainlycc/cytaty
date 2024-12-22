@@ -5,6 +5,7 @@ import { Button } from "@/app/components/ui/button"
 import { LogOut, User } from "lucide-react"
 import { NavMenu } from "@/app/components/ui/nav-menu"
 import { ClientProfileWrapper } from "@/app/components/profile-components"
+import Link from "next/link"
 
 async function handleSignOut() {
   "use server"
@@ -55,6 +56,19 @@ export default async function DashboardPage() {
     instagram: userData?.instagram || "",
   }
 
+  // Pobierz memy i quizy użytkownika
+  const { data: userMemes } = await supabase
+    .from('memes')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+
+  const { data: userQuizzes } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
@@ -98,14 +112,14 @@ export default async function DashboardPage() {
               <div className="grid gap-6 grid-cols-2">
                 <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-zinc-400">Ulubione cytaty</span>
-                    <span className="text-2xl font-bold text-zinc-100">0</span>
+                    <span className="text-sm font-medium text-zinc-400">Twoje memy</span>
+                    <span className="text-2xl font-bold text-zinc-100">{userMemes?.length || 0}</span>
                   </div>
                 </div>
                 <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-zinc-400">Dodane cytaty</span>
-                    <span className="text-2xl font-bold text-zinc-100">0</span>
+                    <span className="text-sm font-medium text-zinc-400">Twoje quizy</span>
+                    <span className="text-2xl font-bold text-zinc-100">{userQuizzes?.length || 0}</span>
                   </div>
                 </div>
               </div>
@@ -117,6 +131,70 @@ export default async function DashboardPage() {
                     Brak aktywności do wyświetlenia.
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-md font-semibold text-zinc-100">Ostatnio utworzone</h3>
+                <div className="grid gap-4">
+                  {userMemes?.slice(0, 3).map(meme => (
+                    <div key={meme.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <img src={meme.image_url} alt="Mem" className="w-16 h-16 object-cover rounded" />
+                        <div>
+                          <p className="text-zinc-100">{meme.top_text}</p>
+                          <p className="text-zinc-400 text-sm">
+                            {new Date(meme.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {userQuizzes?.slice(0, 3).map(quiz => (
+                    <div key={quiz.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
+                      <div>
+                        <h4 className="text-zinc-100">{quiz.title}</h4>
+                        <p className="text-zinc-400 text-sm">
+                          {quiz.description?.slice(0, 100)}...
+                        </p>
+                        <p className="text-zinc-400 text-sm mt-2">
+                          {new Date(quiz.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-zinc-100">Twoje Narzędzia</h2>
+              <div className="grid gap-6">
+                <Link href="/generator-memow">
+                  <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6 hover:bg-black/70 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-zinc-100">Generator Memów</h3>
+                        <p className="text-sm text-zinc-400">
+                          Stwórz własne memy z ulubionych scen filmowych
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link href="/generator-quizow">
+                  <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6 hover:bg-black/70 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-zinc-100">Generator Quizów</h3>
+                        <p className="text-sm text-zinc-400">
+                          Twórz własne quizy filmowe i sprawdź wiedzę innych
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               </div>
             </div>
           </div>

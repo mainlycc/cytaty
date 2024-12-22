@@ -1,7 +1,27 @@
-import { ContactForm } from         "@/app/components/contact-form"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+import { ContactForm } from "@/app/components/contact-form"
 import { NavMenu } from "@/app/components/ui/nav-menu"
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const supabase = createServerComponentClient({ cookies })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Jeśli użytkownik jest zalogowany, pobierz jego dane
+  let userData = null
+  if (session) {
+    const { data: user } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', session.user.id)
+      .single()
+
+    userData = {
+      email: session.user.email!,
+      name: user?.name
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
@@ -15,7 +35,7 @@ export default function ContactPage() {
             Masz pytanie? Napisz do nas!
           </p>
           <div className="flex flex-col gap-6">
-            <ContactForm />
+            <ContactForm currentUser={userData} />
             <div className="text-balance text-center text-xs text-muted-foreground">
               Odpowiemy najszybciej jak to możliwe.
             </div>
