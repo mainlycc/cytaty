@@ -2,6 +2,7 @@
 import axios from 'axios';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Metadata } from 'next';
 
 interface Movie {
   id: number;
@@ -11,6 +12,10 @@ interface Movie {
 
 interface TMDBResponse {
   results: Movie[];
+}
+
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 async function getMovies(timeWindow: string): Promise<Movie[]> {
@@ -41,14 +46,13 @@ async function getMovies(timeWindow: string): Promise<Movie[]> {
   }
 }
 
-interface HomePageProps {
-  searchParams: {
-    period?: string;
-  };
-}
+export const metadata: Metadata = {
+  title: 'Filmy | Najpopularniejsze filmy',
+  description: 'Przeglądaj najpopularniejsze filmy',
+};
 
-const HomePage = async ({ searchParams }: HomePageProps) => {
-  const period = searchParams.period || 'popular';
+export default async function MoviesPage({ searchParams }: PageProps) {
+  const period = searchParams.period as string || 'popular';
   const movies = await getMovies(period);
 
   return (
@@ -64,19 +68,19 @@ const HomePage = async ({ searchParams }: HomePageProps) => {
             <h1 className="text-3xl font-bold text-center mb-6">Najpopularniejsze filmy</h1>
             <div className="flex gap-4">
               <Link 
-                href="/movies?period=popular" 
+                href="/filmy?period=popular" 
                 className={`px-4 py-2 rounded-lg ${period === 'popular' ? 'bg-white text-black' : 'bg-black/50 text-white border border-white/20'}`}
               >
                 Ogólnie
               </Link>
               <Link 
-                href="/movies?period=day" 
+                href="/filmy?period=day" 
                 className={`px-4 py-2 rounded-lg ${period === 'day' ? 'bg-white text-black' : 'bg-black/50 text-white border border-white/20'}`}
               >
                 Dzisiaj
               </Link>
               <Link 
-                href="/movies?period=week" 
+                href="/filmy?period=week" 
                 className={`px-4 py-2 rounded-lg ${period === 'week' ? 'bg-white text-black' : 'bg-black/50 text-white border border-white/20'}`}
               >
                 W tym tygodniu
@@ -87,7 +91,7 @@ const HomePage = async ({ searchParams }: HomePageProps) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {movies.map((movie) => (
               <Link 
-                href={`/movies/${movie.id}`}
+                href={`/filmy/${movie.id}`}
                 key={movie.id}
               >
                 <div className="flex flex-col items-center bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg p-4 transition-transform hover:scale-105 hover:border-white/40">
@@ -111,6 +115,4 @@ const HomePage = async ({ searchParams }: HomePageProps) => {
       </div>
     </div>
   );
-};
-
-export default HomePage;
+}
