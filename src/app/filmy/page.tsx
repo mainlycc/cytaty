@@ -14,13 +14,21 @@ interface TMDBResponse {
   results: Movie[];
 }
 
-// Używamy tylko searchParams, bez params
-export default async function MoviesPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
-  const period = (searchParams?.period as string) || 'popular';
+// Definiujemy typy zgodnie z dokumentacją Next.js
+type SearchParams = { [key: string]: string | string[] | undefined }
+
+interface PageProps {
+  params: { slug: string }
+  searchParams: SearchParams
+}
+
+export const metadata: Metadata = {
+  title: 'Filmy | Najpopularniejsze filmy',
+  description: 'Przeglądaj najpopularniejsze filmy',
+};
+
+export default async function MoviesPage(props: PageProps) {
+  const period = (props.searchParams?.period as string) || 'popular';
   const movies = await getMovies(period);
 
   return (
@@ -112,8 +120,3 @@ async function getMovies(timeWindow: string): Promise<Movie[]> {
     return [];
   }
 }
-
-export const metadata: Metadata = {
-  title: 'Filmy | Najpopularniejsze filmy',
-  description: 'Przeglądaj najpopularniejsze filmy',
-};
