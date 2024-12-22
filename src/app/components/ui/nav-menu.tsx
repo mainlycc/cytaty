@@ -70,7 +70,7 @@ export function NavMenu() {
           </Link>
           <div className="flex-1 flex items-center justify-center space-x-4 lg:space-x-6">
             <NavItem href="/">Strona główna</NavItem>
-            <NavItem href="/movies">Filmy</NavItem>
+            <NavItem href="/filmy">Filmy</NavItem>
             <NavItem href="/memy">Memy</NavItem>
             <NavItem href="/quizy">Quizy</NavItem>
             <NavItem href="/kontakt">Kontakt</NavItem>
