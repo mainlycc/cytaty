@@ -16,6 +16,7 @@ import { Input } from "@/app/components/ui/input"
 import { Label } from "@/app/components/ui/label"
 import { toast } from "sonner"
 import Link from "next/link"
+import { Eye, EyeOff } from "lucide-react"
 
 export function LoginForm({
   className,
@@ -23,6 +24,7 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -129,22 +131,29 @@ export function LoginForm({
                   />
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <a
-                      href="#"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
+                  <Label htmlFor="password">Hasło</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
                     >
-                      Forgot your password?
-                    </a>
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-zinc-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-zinc-400" />
+                      )}
+                    </Button>
                   </div>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Logowanie..." : "Zaloguj się"}

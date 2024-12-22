@@ -3,7 +3,15 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
 import { LogOut, User } from "lucide-react"
-import ProfileForm from "@/app/components/profile-form"
+import { NavMenu } from "@/app/components/ui/nav-menu"
+import { ClientProfileWrapper } from "@/app/components/profile-components"
+
+async function handleSignOut() {
+  "use server"
+  const supabase = createServerComponentClient({ cookies })
+  await supabase.auth.signOut()
+  redirect("/auth/login")
+}
 
 export default async function DashboardPage() {
   const supabase = createServerComponentClient({ cookies })
@@ -14,18 +22,45 @@ export default async function DashboardPage() {
     redirect("/auth/login")
   }
 
-  const handleSignOut = async () => {
-    "use server"
-    const supabase = createServerComponentClient({ cookies })
-    await supabase.auth.signOut()
-    redirect("/auth/login")
+  let { data: userData, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
+
+  if (!userData && !error) {
+    const defaultUserData = {
+      id: session.user.id,
+      email: session.user.email,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: newUserData } = await supabase
+      .from('users')
+      .insert([defaultUserData])
+      .select()
+      .single()
+
+    userData = newUserData
+  }
+
+  const defaultValues = {
+    name: userData?.name || "",
+    username: userData?.username || "",
+    avatar: userData?.avatar || "",
+    bio: userData?.bio || "",
+    website: userData?.website || "",
+    twitter: userData?.twitter || "",
+    instagram: userData?.instagram || "",
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
       
-      {/* Nagłówek */}
+      <NavMenu />
+      
       <header className="border-b border-zinc-800/80 relative">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -46,22 +81,13 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Główna zawartość */}
       <main className="container mx-auto px-4 py-8 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-lg font-semibold mb-6 text-zinc-100">Zarządzanie Profilem</h2>
-            <ProfileForm
-              defaultValues={{
-                name: "",
-                username: "",
-                avatar: "",
-                bio: "",
-                location: "",
-                website: "",
-                twitter: "",
-                instagram: "",
-              }}
+            <ClientProfileWrapper 
+              userData={userData}
+              defaultValues={defaultValues}
             />
           </div>
 

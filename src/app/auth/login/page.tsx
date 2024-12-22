@@ -1,33 +1,18 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import { GalleryVerticalEnd } from "lucide-react"
-import { Toaster } from "sonner"
 import { LoginForm } from "@/app/components/login-form"
+import { NavMenu } from "@/app/components/ui/nav-menu"
 
-export default async function LoginPage() {
-  const supabase = createServerComponentClient({ cookies })
-  
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (session) {
-    redirect("/dashboard") // lub inna ścieżka dla zalogowanych użytkowników
-  }
-
+export default function LoginPage() {
   return (
-    <>
-      <Toaster />
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-full max-w-sm flex-col gap-6">
-          <a href="#" className="flex items-center gap-2 self-center font-medium">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            Cytaty
-          </a>
-          <LoginForm />
+    <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
+      
+      <NavMenu />
+      
+      <main className="container mx-auto px-4 py-16 relative">
+        <div className="max-w-md mx-auto">
+          <LoginForm className="w-full" />
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   )
 }
