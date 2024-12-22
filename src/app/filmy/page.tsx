@@ -14,7 +14,9 @@ interface TMDBResponse {
   results: Movie[];
 }
 
-interface PageProps {
+// Poprawiona definicja typu dla props strony
+type Props = {
+  params: { id: string }
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
@@ -51,7 +53,8 @@ export const metadata: Metadata = {
   description: 'Przeglądaj najpopularniejsze filmy',
 };
 
-export default async function MoviesPage({ searchParams }: PageProps) {
+// Używamy nowego typu Props
+export default async function MoviesPage({ searchParams }: Props) {
   const period = searchParams.period as string || 'popular';
   const movies = await getMovies(period);
 
