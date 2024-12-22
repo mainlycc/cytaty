@@ -7,11 +7,12 @@ export const metadata: Metadata = {
   description: 'Przeglądaj najpopularniejsze filmy',
 };
 
-// Uproszczony komponent strony
+// Najprostsze możliwe podejście
 export default function MoviesPage({
-  searchParams,
+  searchParams = {}
 }: {
-  searchParams: { period?: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  return <MovieList initialPeriod={searchParams.period || 'popular'} />;
+  const period = typeof searchParams.period === 'string' ? searchParams.period : 'popular';
+  return <MovieList initialPeriod={period} />;
 }
