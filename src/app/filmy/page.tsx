@@ -14,48 +14,13 @@ interface TMDBResponse {
   results: Movie[];
 }
 
-// Poprawiona definicja typu dla props strony
-type Props = {
-  params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-async function getMovies(timeWindow: string): Promise<Movie[]> {
-  try {
-    let endpoint = '';
-    switch (timeWindow) {
-      case 'day':
-        endpoint = 'trending/movie/day';
-        break;
-      case 'week':
-        endpoint = 'trending/movie/week';
-        break;
-      default:
-        endpoint = 'movie/popular';
-    }
-
-    const response = await axios.get<TMDBResponse>(`https://api.themoviedb.org/3/${endpoint}`, {
-      params: {
-        api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY,
-        language: 'pl-PL',
-      },
-    });
-    
-    return response.data.results;
-  } catch (error) {
-    console.error('Błąd podczas pobierania danych:', error);
-    return [];
-  }
-}
-
-export const metadata: Metadata = {
-  title: 'Filmy | Najpopularniejsze filmy',
-  description: 'Przeglądaj najpopularniejsze filmy',
-};
-
-// Używamy nowego typu Props
-export default async function MoviesPage({ searchParams }: Props) {
-  const period = searchParams.period as string || 'popular';
+// Używamy tylko searchParams, bez params
+export default async function MoviesPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
+  const period = (searchParams?.period as string) || 'popular';
   const movies = await getMovies(period);
 
   return (
@@ -119,3 +84,36 @@ export default async function MoviesPage({ searchParams }: Props) {
     </div>
   );
 }
+
+async function getMovies(timeWindow: string): Promise<Movie[]> {
+  try {
+    let endpoint = '';
+    switch (timeWindow) {
+      case 'day':
+        endpoint = 'trending/movie/day';
+        break;
+      case 'week':
+        endpoint = 'trending/movie/week';
+        break;
+      default:
+        endpoint = 'movie/popular';
+    }
+
+    const response = await axios.get<TMDBResponse>(`https://api.themoviedb.org/3/${endpoint}`, {
+      params: {
+        api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY,
+        language: 'pl-PL',
+      },
+    });
+    
+    return response.data.results;
+  } catch (error) {
+    console.error('Błąd podczas pobierania danych:', error);
+    return [];
+  }
+}
+
+export const metadata: Metadata = {
+  title: 'Filmy | Najpopularniejsze filmy',
+  description: 'Przeglądaj najpopularniejsze filmy',
+};
