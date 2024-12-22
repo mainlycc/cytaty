@@ -9,6 +9,7 @@ import { Textarea } from "./ui/textarea"
 import { Plus, Trash2 } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface Question {
   question: string
@@ -17,6 +18,7 @@ interface Question {
 }
 
 export function QuizGenerator() {
+  const router = useRouter()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [questions, setQuestions] = useState<Question[]>([
@@ -54,6 +56,30 @@ export function QuizGenerator() {
 
   const handleSave = async () => {
     try {
+      // Sprawdź czy wszystkie wymagane pola są wypełnione
+      if (!title.trim()) {
+        toast.error('Tytuł jest wymagany')
+        return
+      }
+
+      if (!description.trim()) {
+        toast.error('Opis jest wymagany')
+        return
+      }
+
+      // Sprawdź czy wszystkie pytania są wypełnione
+      const isQuestionsValid = questions.every(q => 
+        q.question.trim() && 
+        q.answers.every(a => a.trim()) &&
+        q.correctAnswer >= 0 && 
+        q.correctAnswer < q.answers.length
+      )
+
+      if (!isQuestionsValid) {
+        toast.error('Wypełnij wszystkie pytania i odpowiedzi')
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Nie znaleziono użytkownika')
 
@@ -67,6 +93,9 @@ export function QuizGenerator() {
       if (error) throw error
 
       toast.success('Quiz został zapisany!')
+      router.push('/quizy')
+      router.refresh()
+      
       // Reset formularza
       setTitle('')
       setDescription('')

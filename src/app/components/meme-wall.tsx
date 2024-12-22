@@ -1,184 +1,78 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { toast } from "sonner"
 import { Card, CardContent } from "./ui/card"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Heart, MessageCircle, Send, Trash2 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import Link from "next/link"
 
-interface MemeWallProps {
-  memes: any[]
-  currentUser: any
+type Meme = {
+  id: number
+  created_at: string
+  user_id: string
+  image_url: string
+  top_text: string
+  bottom_text: string
 }
 
-export function MemeWall({ memes, currentUser }: MemeWallProps) {
-  const [comments, setComments] = useState<{ [key: string]: string }>({})
+export function MemeWall() {
+  const [memes, setMemes] = useState<Meme[]>([])
   const supabase = createClientComponentClient()
 
-  const handleLike = async (memeId: string) => {
-    if (!currentUser) {
-      toast.error('Musisz być zalogowany, aby polubić mem')
-      return
-    }
+  useEffect(() => {
+    const fetchMemes = async () => {
+      const { data, error } = await supabase
+        .from('memes')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    try {
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select()
-        .eq('meme_id', memeId)
-        .eq('user_id', currentUser.id)
-        .single()
-
-      if (existingLike) {
-        await supabase
-          .from('likes')
-          .delete()
-          .eq('id', existingLike.id)
-        toast.success('Usunięto polubienie')
-      } else {
-        await supabase
-          .from('likes')
-          .insert({ meme_id: memeId, user_id: currentUser.id })
-        toast.success('Polubiono mem!')
+      if (error) {
+        console.error('Błąd podczas pobierania memów:', error)
+        return
       }
-    } catch (error) {
-      toast.error('Wystąpił błąd')
-    }
-  }
 
-  const handleComment = async (memeId: string) => {
-    if (!currentUser) {
-      toast.error('Musisz być zalogowany, aby dodać komentarz')
-      return
+      setMemes(data || [])
     }
 
-    const comment = comments[memeId]
-    if (!comment?.trim()) return
+    fetchMemes()
 
-    try {
-      await supabase
-        .from('comments')
-        .insert({
-          meme_id: memeId,
-          user_id: currentUser.id,
-          content: comment
-        })
+    // Subskrybuj zmiany w tabeli memes
+    const channel = supabase
+      .channel('memes_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'memes' 
+        }, 
+        (payload) => {
+          fetchMemes() // Odśwież memy po każdej zmianie
+        }
+      )
+      .subscribe()
 
-      setComments(prev => ({ ...prev, [memeId]: '' }))
-      toast.success('Dodano komentarz!')
-    } catch (error) {
-      toast.error('Wystąpił błąd podczas dodawania komentarza')
+    return () => {
+      supabase.removeChannel(channel)
     }
-  }
+  }, [supabase])
 
   return (
-    <div className="space-y-8">
-      {memes?.map((meme) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {memes.map((meme) => (
         <Card key={meme.id} className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
-          <CardContent className="p-6 space-y-4">
-            {/* Nagłówek mema */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={meme.users?.avatar} />
-                <AvatarFallback>{meme.users?.name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium text-zinc-100">{meme.users?.name}</p>
-                <p className="text-sm text-zinc-400">@{meme.users?.username}</p>
-              </div>
-            </div>
-
-            {/* Mem */}
-            <div className="relative">
+          <CardContent className="p-4">
+            <div className="relative aspect-video">
               <img
                 src={meme.image_url}
                 alt="Mem"
-                className="w-full rounded-lg"
+                className="w-full h-full object-contain"
               />
               <div className="absolute inset-0 flex flex-col items-center justify-between p-4">
-                <h2 className="text-2xl font-bold text-white uppercase text-stroke">
+                <h2 className="text-xl font-bold text-white uppercase text-stroke text-center">
                   {meme.top_text}
                 </h2>
-                <h2 className="text-2xl font-bold text-white uppercase text-stroke">
+                <h2 className="text-xl font-bold text-white uppercase text-stroke text-center">
                   {meme.bottom_text}
                 </h2>
               </div>
-            </div>
-
-            {/* Akcje */}
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLike(meme.id)}
-                className={`text-zinc-400 hover:text-red-500 ${
-                  meme.likes?.some((like: any) => like.user_id === currentUser?.id)
-                    ? "text-red-500"
-                    : ""
-                }`}
-              >
-                <Heart className="h-5 w-5 mr-2" />
-                {meme.likes?.length || 0}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-zinc-400 hover:text-zinc-100"
-              >
-                <MessageCircle className="h-5 w-5 mr-2" />
-                {meme.comments?.length || 0}
-              </Button>
-            </div>
-
-            {/* Komentarze */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                {meme.comments?.map((comment: any) => (
-                  <div key={comment.id} className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.users?.avatar} />
-                      <AvatarFallback>{comment.users?.name?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-zinc-100">
-                          {comment.users?.name}
-                        </p>
-                        <span className="text-xs text-zinc-500">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-zinc-300">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {currentUser && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Dodaj komentarz..."
-                    value={comments[meme.id] || ''}
-                    onChange={(e) => setComments(prev => ({
-                      ...prev,
-                      [meme.id]: e.target.value
-                    }))}
-                    className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleComment(meme.id)}
-                    className="text-zinc-400 hover:text-zinc-100"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

@@ -1,13 +1,11 @@
 'use client'
 
-import { NavMenu } from '@/app/components/ui/nav-menu'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 
 export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <NavMenu />
       <div className="container mx-auto px-4 pt-24 pb-12 relative">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="text-[15rem] font-bold text-red-600 leading-none select-none">
