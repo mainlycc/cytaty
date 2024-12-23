@@ -1,96 +1,108 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-import { QuizList } from "@/app/components/quiz-list"
-import { UserRanking } from "@/app/components/user-ranking"
-import { Database } from "@/lib/database.types"
-import { User } from "@supabase/auth-helpers-nextjs"
+import { Card } from "@/app/components/ui/card"
+import Link from "next/link"
+import { Trophy, Star, Film, Award } from 'lucide-react'
 
-interface QuizRaw {
-  id: number
-  title: string
-  description: string
-  questions: {
-    question: string
-    answers: string[]
-    correctAnswer: number
-  }[]
-  user_id: string
-  users: {
-    name: string | null
-    username: string | null
-    avatar: string | null
-  }[] | null
-}
+export default function HomePage() {
+  // Przykładowe dane dla rankingu
+  const rankings = [
+    { id: 1, name: "Anna K.", points: 2500, gamesPlayed: 45 },
+    { id: 2, name: "Tomasz W.", points: 2350, gamesPlayed: 42 },
+    { id: 3, name: "Marta S.", points: 2200, gamesPlayed: 38 },
+    { id: 4, name: "Piotr N.", points: 2100, gamesPlayed: 36 },
+    { id: 5, name: "Ewa L.", points: 2000, gamesPlayed: 35 },
+  ]
 
-export default async function QuizPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
-  const { data: { session } } = await supabase.auth.getSession()
-
-  // Pobierz quizy wraz z informacjami o autorze
-  const { data: quizzesRaw, error: quizzesError } = await supabase
-    .from('quizzes')
-    .select(`
-      id,
-      title,
-      description,
-      questions,
-      user_id,
-      users (
-        name,
-        username,
-        avatar
-      )
-    `)
-    .order('created_at', { ascending: false })
-
-  if (quizzesError) {
-    console.error('Błąd podczas pobierania quizów:', quizzesError)
-  }
-
-  // Przekształć dane do odpowiedniego formatu
-  const quizzes = (quizzesRaw as QuizRaw[] || []).map(quiz => ({
-    ...quiz,
-    users: quiz.users?.[0] || { name: null, username: null, avatar: null }
-  }))
-
-  // Pobierz ranking użytkowników
-  const { data: userRanking, error: rankingError } = await supabase
-    .from('users')
-    .select(`
-      id,
-      name,
-      username,
-      avatar
-    `)
-    .order('points', { ascending: false })
-    .limit(10)
-
-  if (rankingError) {
-    console.error('Błąd podczas pobierania rankingu:', rankingError)
-  }
+  // Przykładowe dane dla quizów
+  const quizzes = [
+    {
+      id: 1,
+      title: "Klasyka Kina",
+      description: "Sprawdź swoją wiedzę o klasycznych filmach wszech czasów",
+      difficulty: "Średni",
+      questions: 20,
+      icon: Film,
+    },
+    {
+      id: 2,
+      title: "Oscary 2023",
+      description: "Quiz o filmach nominowanych do Oscarów w 2023",
+      difficulty: "Trudny",
+      questions: 15,
+      icon: Award,
+    },
+    {
+      id: 3,
+      title: "Gwiazdy Kina",
+      description: "Rozpoznaj znanych aktorów i ich role",
+      difficulty: "Łatwy",
+      questions: 25,
+      icon: Star,
+    },
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
-      
-      <main className="container mx-auto px-4 py-16 relative">
-        <h1 className="text-3xl font-bold text-zinc-100 text-center mb-2">Quizy Filmowe</h1>
-        <p className="text-zinc-400 text-center mb-8">
-          Sprawdź swoją wiedzę filmową i rywalizuj z innymi!
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-xl font-semibold text-zinc-100 mb-4">Ranking graczy</h2>
-            <UserRanking users={userRanking || []} />
+    <div className="min-h-screen bg-background p-6">
+      <h1 className="text-4xl font-bold text-center mb-8">Filmowe Quizy</h1>
+      <div className="grid md:grid-cols-2 gap-6 max-w-7xl mx-auto">
+        {/* Ranking graczy */}
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-yellow-500" />
+            Ranking graczy
+          </h2>
+          <div className="space-y-4">
+            {rankings.map((player, index) => (
+              <div
+                key={player.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-lg w-6">{index + 1}.</span>
+                  <div>
+                    <p className="font-medium">{player.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Rozegrane gry: {player.gamesPlayed}
+                    </p>
+                  </div>
+                </div>
+                <div className="font-bold text-primary">{player.points} pkt</div>
+              </div>
+            ))}
           </div>
+        </Card>
 
-          <div>
-            <h2 className="text-xl font-semibold text-zinc-100 mb-4">Dostępne quizy</h2>
-            <QuizList quizzes={quizzes} currentUser={session?.user || null} />
+        {/* Lista quizów */}
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">Dostępne quizy</h2>
+          <div className="space-y-4">
+            {quizzes.map((quiz) => {
+              const Icon = quiz.icon
+              return (
+                <Link key={quiz.id} href={`/quiz/${quiz.id}`}>
+                  <div className="p-4 rounded-lg border bg-card hover:bg-accent transition-colors duration-200 cursor-pointer">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Icon className="h-6 w-6 text-primary" />
+                      <h3 className="font-semibold text-lg">{quiz.title}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {quiz.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-primary">
+                        Poziom: {quiz.difficulty}
+                      </span>
+                      <span className="text-muted-foreground">
+                        Pytań: {quiz.questions}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
-        </div>
-      </main>
+        </Card>
+      </div>
     </div>
   )
-} 
+}
+
