@@ -1,18 +1,13 @@
-// app/page.tsx
-import { Metadata } from 'next';
-import { MovieList } from '@/app/components/movie-list';
+import { MovieGrid } from '@/app/components/ui/movie-grid'
 
-export const metadata: Metadata = {
-  title: 'Filmy | Najpopularniejsze filmy',
-  description: 'Przeglądaj najpopularniejsze filmy',
-};
-
-// Najprostsze możliwe podejście
-export default function MoviesPage({
-  searchParams = {}
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
-  const period = typeof searchParams.period === 'string' ? searchParams.period : 'popular';
-  return <MovieList initialPeriod={period} />;
+export default function Home() {
+  return (
+    <main className="container mx-auto py-8">
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Popularne filmy</h1>
+        <MovieGrid />
+      </div>
+    </main>
+  )
 }
+
