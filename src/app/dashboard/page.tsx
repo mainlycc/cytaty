@@ -3,7 +3,6 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
 import { LogOut, User } from "lucide-react"
-import { NavMenu } from "@/app/components/ui/nav-menu"
 import { ClientProfileWrapper } from "@/app/components/profile-components"
 import Link from "next/link"
 
@@ -72,8 +71,6 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
-      
-      <NavMenu />
       
       <header className="border-b border-zinc-800/80 relative">
         <div className="container mx-auto px-4 py-4">
