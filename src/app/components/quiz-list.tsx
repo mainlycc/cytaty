@@ -3,7 +3,6 @@
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { User } from "@supabase/auth-helpers-nextjs"
 
 interface Quiz {
   id: number
