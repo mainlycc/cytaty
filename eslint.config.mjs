@@ -11,6 +11,16 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      // Wyłączenie reguły prefer-const, jeśli przeszkadza:
+      "prefer-const": "off",
+      // Dodanie reguły, która zapobiega przypisywaniu do const:
+      "no-const-assign": "error",
+      // Inne reguły możesz tu dostosować:
+      // np. "no-var": "error", jeśli chcesz wymusić używanie let/const zamiast var
+    },
+  },
 ];
 
 export default eslintConfig;
