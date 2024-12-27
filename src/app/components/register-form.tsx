@@ -41,13 +41,14 @@ export function RegisterForm({
          emailRedirectTo: `${window.location.origin}/auth/callback`
        }
      })
-      if (_error) {
+     
+     if (_error) {
        toast.error(_error.message)
        return
      }
       toast.success("Sprawdź swoją skrzynkę email aby potwierdzić rejestrację!")
      router.push("/auth/login")
-   } catch (error) {
+   } catch {
      toast.error("Wystąpił błąd podczas rejestracji")
    } finally {
      setLoading(false)
@@ -65,7 +66,7 @@ export function RegisterForm({
      if (_error) {
        toast.error(_error.message)
      }
-   } catch (error) {
+   } catch {
      toast.error("Wystąpił błąd podczas rejestracji")
    }
  }

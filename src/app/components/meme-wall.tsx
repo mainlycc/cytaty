@@ -43,7 +43,7 @@ export function MemeWall() {
           schema: 'public', 
           table: 'memes' 
         }, 
-        (payload) => {
+        () => {
           fetchMemes() // Odśwież memy po każdej zmianie
         }
       )

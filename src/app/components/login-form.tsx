@@ -47,7 +47,7 @@ export function LoginForm({
       toast.success("Zalogowano pomyślnie!")
       router.refresh()
       router.push("/dashboard") // lub inna ścieżka po zalogowaniu
-    } catch (error) {
+    } catch {
       toast.error("Wystąpił błąd podczas logowania")
     } finally {
       setLoading(false)
@@ -66,7 +66,7 @@ export function LoginForm({
       if (_error) {
         toast.error(_error.message)
       }
-    } catch (error) {
+    } catch {
       toast.error("Wystąpił błąd podczas logowania")
     }
   }

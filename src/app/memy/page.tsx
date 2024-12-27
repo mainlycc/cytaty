@@ -25,7 +25,6 @@ type SortOption = 'today' | 'thisWeek' | 'thisMonth' | 'thisYear'
 
 export default function MemeWall() {
   const [comments, setComments] = useState<{[key: number]: string}>({})
-  const [sortBy, setSortBy] = useState<SortOption>('today')
   const [memes, setMemes] = useState(initialMemes)
 
   const handleCommentChange = (id: number, value: string) => {
@@ -38,21 +37,18 @@ export default function MemeWall() {
   }
 
   const handleSortChange = (value: SortOption) => {
-    setSortBy(value)
     const sortedMemes = [...initialMemes].sort((a, b) => {
       const now = new Date()
-      const aDate = a.date
-      const bDate = b.date
 
       switch (value) {
         case 'today':
-          return aDate.getDate() === now.getDate() ? b.likes - a.likes : 0
+          return a.date.getDate() === now.getDate() ? b.likes - a.likes : 0
         case 'thisWeek':
-          return aDate.getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000 ? b.likes - a.likes : 0
+          return a.date.getTime() >= now.getTime() - 7 * 24 * 60 * 60 * 1000 ? b.likes - a.likes : 0
         case 'thisMonth':
-          return aDate.getMonth() === now.getMonth() ? b.likes - a.likes : 0
+          return a.date.getMonth() === now.getMonth() ? b.likes - a.likes : 0
         case 'thisYear':
-          return aDate.getFullYear() === now.getFullYear() ? b.likes - a.likes : 0
+          return a.date.getFullYear() === now.getFullYear() ? b.likes - a.likes : 0
         default:
           return 0
       }

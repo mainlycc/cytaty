@@ -63,7 +63,7 @@ export function MemeGenerator() {
       const fileName = `${user.id}-${timestamp}.${fileExt}`
       const filePath = `${fileName}`
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('memes')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -102,9 +102,9 @@ export function MemeGenerator() {
       setPreviewUrl('')
       setTags([])
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Błąd:', error)
-      toast.error(error.message || 'Wystąpił błąd podczas zapisywania mema')
+      toast.error((error as Error).message || 'Wystąpił błąd podczas zapisywania mema')
     }
   }
 

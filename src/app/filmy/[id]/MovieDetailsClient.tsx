@@ -26,6 +26,12 @@ type Genre = {
   name: string;
 };
 
+type CrewMember = {
+  job: string;
+  name: string;
+  // Dodaj inne właściwości, które są potrzebne
+};
+
 export default function MovieDetailsClient() {
   const { id } = useParams();
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -59,7 +65,7 @@ export default function MovieDetailsClient() {
 
         setMovie(movieData);
         setCast(creditsData.cast.slice(0, 5)); // Pobierz pierwszych 5 członków obsady
-        setDirector(creditsData.crew.find((member: any) => member.job === 'Director'));
+        setDirector(creditsData.crew.find((member: CrewMember) => member.job === 'Director'));
         setWatchProviders(providersData.results.PL?.flatrate || []); // Pobierz platformy dostępne w Polsce
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Wystąpił błąd');
