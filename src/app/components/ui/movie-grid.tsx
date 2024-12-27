@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react'
-import { MovieCard } from '@/app/components/ui/movie-card'
 import { TimeWindowSwitch } from './time-window-switch'
 import { tmdb } from '@/lib/tmdb'
 import type { Movie, TimeWindow } from '@/lib/tmdb'

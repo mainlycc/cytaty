@@ -3,8 +3,6 @@
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Play } from "lucide-react"
-import Link from "next/link"
 import { User } from "@supabase/auth-helpers-nextjs"
 
 interface Quiz {
