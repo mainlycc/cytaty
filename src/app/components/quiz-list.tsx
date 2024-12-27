@@ -22,10 +22,7 @@ interface Quiz {
   }
 }
 
-export function QuizList({ quizzes, currentUser }: { 
-  quizzes: Quiz[], 
-  currentUser: User | null 
-}) {
+export function QuizList({ quizzes }: { quizzes: Quiz[] }) {
   return (
     <div className="space-y-4">
       {quizzes.map((quiz) => (
