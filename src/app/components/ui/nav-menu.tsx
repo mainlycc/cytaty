@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
 import { ChevronDown, UserIcon, LogIn, LogOut } from 'lucide-react'
+import Image from "next/image"
 
 const NavItem = ({ href, children, items }: { href: string; children: React.ReactNode; items?: { title: string; href: string }[] }) => {
   if (items) {
@@ -48,25 +49,41 @@ export function NavMenu() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const supabase = createClientComponentClient()
 
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    setIsLoggedIn(!!session)
+  }
+
   useEffect(() => {
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession()
-      setIsLoggedIn(!!session)
-    }
     checkAuth()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session)
+    })
+
+    return () => subscription.unsubscribe()
   }, [supabase.auth])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    setIsLoggedIn(false)
     router.push('/auth/signout')
   }
 
   return (
-    <div className="bg-black/50 backdrop-blur-sm fixed w-full z-10">
+    <div className="bg-black/100 backdrop-blur-sm fixed w-full z-10">
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16">
-          <Link href="/" className="text-white font-bold text-xl">
-            Cytaty z filmów
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Cytaty z filmów"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
           </Link>
           <div className="flex-1 flex items-center justify-center space-x-4 lg:space-x-6">
             <NavItem href="/">Strona główna</NavItem>
