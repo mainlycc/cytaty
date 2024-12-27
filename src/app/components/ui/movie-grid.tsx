@@ -1,10 +1,13 @@
 'use client'
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react'
 import { MovieCard } from '@/app/components/ui/movie-card'
 import { TimeWindowSwitch } from './time-window-switch'
 import { tmdb } from '@/lib/tmdb'
 import type { Movie, TimeWindow } from '@/lib/tmdb'
+import { Card, CardContent } from './card'
+import Image from 'next/image'
 
 export function MovieGrid() {
   const [movies, setMovies] = useState<Movie[]>([])
@@ -59,6 +62,10 @@ export function MovieGrid() {
     setTimeWindow(newTimeWindow)
   }
 
+  if (isLoading) {
+    return <div className="text-center p-4 text-white">Ładowanie...</div>
+  }
+
   return (
     <div className="space-y-6">
       <TimeWindowSwitch 
@@ -66,22 +73,35 @@ export function MovieGrid() {
         onTimeWindowChange={handleTimeWindowChange}
       />
       
-      {isLoading ? (
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-muted aspect-[2/3] rounded-lg" />
-            </div>
-          ))}
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="text-center p-4">
           <p className="text-red-500">{error}</p>
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+            <Link 
+              key={movie.id} 
+              href={`/filmy/${movie.id}`}
+              className="transition-transform hover:scale-105"
+            >
+              <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80 h-full">
+                <CardContent className="p-4">
+                  <div className="aspect-[2/3] relative mb-2">
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      alt={movie.title}
+                      fill
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
+                  <h2 className="text-white font-semibold truncate">{movie.title}</h2>
+                  <p className="text-zinc-400 text-sm">
+                    Ocena: {movie.vote_average.toFixed(1)}/10
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
