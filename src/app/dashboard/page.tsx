@@ -16,8 +16,9 @@ async function handleSignOut() {
 export default async function DashboardPage() {
   const supabase = createServerComponentClient({ cookies })
   
-  const { data: { session } } = await supabase.auth.getSession()
-  
+  const { data: sessionData } = await supabase.auth.getSession()
+  const session = sessionData?.session;
+
   if (!session) {
     redirect("/auth/login")
   }
