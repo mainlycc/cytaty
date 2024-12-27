@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
-import { ChevronDown, UserIcon, LogIn, LogOut } from 'lucide-react'
+import { ChevronDown, LogIn, LogOut } from 'lucide-react'
 import Image from "next/image"
 
 const NavItem = ({ href, children, items }: { href: string; children: React.ReactNode; items?: { title: string; href: string }[] }) => {

@@ -7,6 +7,7 @@ import { Label } from "./ui/label"
 import { Card, CardContent } from "./ui/card"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
+import Image from 'next/image';
 
 export function MemeGenerator() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -196,10 +197,11 @@ export function MemeGenerator() {
           <div className="aspect-video bg-zinc-900/50 rounded-lg overflow-hidden flex items-center justify-center">
             {previewUrl ? (
               <div className="relative w-full h-full">
-                <img
+                <Image
                   src={previewUrl}
                   alt="Preview"
                   className="w-full h-full object-contain"
+                  fill
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-between p-4">
                   <h2 className="text-2xl font-bold text-white uppercase text-stroke">
