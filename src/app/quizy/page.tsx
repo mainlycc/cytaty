@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Trophy, Film } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { Round } from '@/app/components/round-editor'
 
 // Dodajemy interfejs dla quizu
 interface Quiz {
@@ -12,7 +13,7 @@ interface Quiz {
   title: string;
   description: string;
   difficulty: string;
-  questions: any[]; // lub bardziej szczegółowy typ jeśli jest znany
+  questions: Round[]; // Używamy typu Round zamiast any[]
   icon?: string;
   timePerQuestion: number;
   rules: string;
