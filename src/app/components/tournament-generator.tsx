@@ -13,8 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select"
-import { Slider } from "@/app/components/ui/slider"
-import { Clock, HelpCircle, Book, Target, AlertCircle, Gamepad2, Brain, Trophy, Medal, Star, Rocket, Zap, School } from 'lucide-react'
+import { HelpCircle, Book, Target, AlertCircle, Gamepad2, Brain, Trophy, Medal, Star, Rocket, Zap, School } from 'lucide-react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Round } from './round-editor'
 

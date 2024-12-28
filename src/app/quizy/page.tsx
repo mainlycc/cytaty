@@ -2,12 +2,25 @@
 
 import { Card } from "@/app/components/ui/card"
 import Link from "next/link"
-import { Trophy, Star, Film, Award } from 'lucide-react'
+import { Trophy, Film } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
+// Dodajemy interfejs dla quizu
+interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  questions: any[]; // lub bardziej szczegółowy typ jeśli jest znany
+  icon?: string;
+  timePerQuestion: number;
+  rules: string;
+  user_id: string;
+}
+
 export default function HomePage() {
-  const [quizzes, setQuizzes] = useState<any[]>([])
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const supabase = createClientComponentClient()
 
   useEffect(() => {

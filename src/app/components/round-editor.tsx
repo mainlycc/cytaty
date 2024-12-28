@@ -7,7 +7,7 @@ import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group"
-import { Plus, Trash2, Save, Edit2 } from 'lucide-react'
+import { Trash2, Save, Edit2 } from 'lucide-react'
 
 export interface Round {
   id: number
