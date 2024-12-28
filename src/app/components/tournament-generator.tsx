@@ -14,9 +14,26 @@ import {
   SelectValue,
 } from "@/app/components/ui/select"
 import { Slider } from "@/app/components/ui/slider"
-import { Clock, HelpCircle, Book, Target, AlertCircle } from 'lucide-react'
+import { Clock, HelpCircle, Book, Target, AlertCircle, Gamepad2, Brain, Trophy, Medal, Star, Rocket, Zap, School } from 'lucide-react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Round } from './round-editor'
+
+type QuizIcon = {
+  icon: React.ReactNode;
+  name: string;
+  value: string;
+}
+
+const quizIcons: QuizIcon[] = [
+  { icon: <Brain className="w-4 h-4" />, name: "Wiedza", value: "brain" },
+  { icon: <Trophy className="w-4 h-4" />, name: "Turniej", value: "trophy" },
+  { icon: <Gamepad2 className="w-4 h-4" />, name: "Gra", value: "gamepad" },
+  { icon: <Medal className="w-4 h-4" />, name: "Konkurs", value: "medal" },
+  { icon: <Star className="w-4 h-4" />, name: "Standardowy", value: "star" },
+  { icon: <Rocket className="w-4 h-4" />, name: "Zaawansowany", value: "rocket" },
+  { icon: <Zap className="w-4 h-4" />, name: "Szybki", value: "zap" },
+  { icon: <School className="w-4 h-4" />, name: "Edukacyjny", value: "school" },
+]
 
 export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
   const [tournamentData, setTournamentData] = useState({
@@ -24,9 +41,9 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
     subtitle: '',
     description: '',
     timePerQuestion: 30,
-    questions: 10,
     difficulty: 'medium',
     rules: '',
+    icon: 'star',
     questionsList: []
   })
 
@@ -48,7 +65,8 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
       timePerQuestion: tournamentData.timePerQuestion,
       questions: rounds,
       difficulty: tournamentData.difficulty,
-      rules: tournamentData.rules
+      rules: tournamentData.rules,
+      icon: tournamentData.icon
     })
 
     if (error) {
@@ -110,36 +128,26 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
               />
             </div>
 
-            {/* Czas trwania */}
+            {/* Wybór ikony */}
             <div>
-              <Label className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Czas na odpowiedź (sekundy): {tournamentData.timePerQuestion}
-              </Label>
-              <Slider
-                value={[tournamentData.timePerQuestion]}
-                onValueChange={(value) => setTournamentData({...tournamentData, timePerQuestion: value[0]})}
-                min={10}
-                max={120}
-                step={5}
-                className="mt-2"
-              />
-            </div>
-
-            {/* Liczba pytań */}
-            <div>
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 mb-2">
                 <Target className="w-4 h-4" />
-                Liczba rund: {tournamentData.questions}
+                Ikona quizu
               </Label>
-              <Slider
-                value={[tournamentData.questions]}
-                onValueChange={(value) => setTournamentData({...tournamentData, questions: value[0]})}
-                min={5}
-                max={50}
-                step={5}
-                className="mt-2"
-              />
+              <div className="grid grid-cols-4 gap-2">
+                {quizIcons.map((iconObj) => (
+                  <Button
+                    key={iconObj.value}
+                    type="button"
+                    variant={tournamentData.icon === iconObj.value ? "default" : "outline"}
+                    className="flex flex-col items-center gap-1 p-2 h-auto"
+                    onClick={() => setTournamentData({...tournamentData, icon: iconObj.value})}
+                  >
+                    {iconObj.icon}
+                    <span className="text-xs">{iconObj.name}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Poziom trudności */}
