@@ -2,9 +2,10 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, Edit } from "lucide-react"
 import { ClientProfileWrapper } from "@/app/components/profile-components"
 import Link from "next/link"
+import { DeleteMemeButton, DeleteQuizButton } from "@/app/components/delete-buttons"
 
 async function handleSignOut() {
   "use server"
@@ -95,76 +96,7 @@ export default async function DashboardPage() {
 
       <main className="container mx-auto px-4 py-8 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-lg font-semibold mb-6 text-zinc-100">Zarządzanie Profilem</h2>
-            <ClientProfileWrapper 
-              userData={userData}
-              defaultValues={defaultValues}
-            />
-          </div>
-
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-zinc-100">Twoje Statystyki</h2>
-            
-            <div className="grid gap-6">
-              <div className="grid gap-6 grid-cols-2">
-                <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-zinc-400">Twoje memy</span>
-                    <span className="text-2xl font-bold text-zinc-100">{userMemes?.length || 0}</span>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-zinc-400">Twoje quizy</span>
-                    <span className="text-2xl font-bold text-zinc-100">{userQuizzes?.length || 0}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm">
-                <div className="p-6">
-                  <h3 className="text-md font-semibold mb-4 text-zinc-100">Ostatnia aktywność</h3>
-                  <div className="text-sm text-zinc-400">
-                    Brak aktywności do wyświetlenia.
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-md font-semibold text-zinc-100">Ostatnio utworzone</h3>
-                <div className="grid gap-4">
-                  {userMemes?.slice(0, 3).map(meme => (
-                    <div key={meme.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <img src={meme.image_url} alt="Mem" className="w-16 h-16 object-cover rounded" />
-                        <div>
-                          <p className="text-zinc-100">{meme.top_text}</p>
-                          <p className="text-zinc-400 text-sm">
-                            {new Date(meme.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {userQuizzes?.slice(0, 3).map(quiz => (
-                    <div key={quiz.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
-                      <div>
-                        <h4 className="text-zinc-100">{quiz.title}</h4>
-                        <p className="text-zinc-400 text-sm">
-                          {quiz.description?.slice(0, 100)}...
-                        </p>
-                        <p className="text-zinc-400 text-sm mt-2">
-                          {new Date(quiz.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
+          <div className="space-y-8">
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-zinc-100">Twoje Narzędzia</h2>
               <div className="grid gap-6">
@@ -195,6 +127,87 @@ export default async function DashboardPage() {
                 </Link>
               </div>
             </div>
+
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-zinc-100">Twoje Statystyki</h2>
+              <div className="grid gap-6">
+                <div className="grid gap-6 grid-cols-2">
+                  <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-medium text-zinc-400">Twoje memy</span>
+                      <span className="text-2xl font-bold text-zinc-100">{userMemes?.length || 0}</span>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800/80 bg-black/50 backdrop-blur-sm p-6">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-medium text-zinc-400">Twoje quizy</span>
+                      <span className="text-2xl font-bold text-zinc-100">{userQuizzes?.length || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-zinc-100">Ostatnio utworzone</h2>
+              <div className="grid gap-4">
+                {userMemes?.slice(0, 3).map(meme => (
+                  <div key={meme.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <img src={meme.image_url} alt="Mem" className="w-16 h-16 object-cover rounded" />
+                        <div>
+                          <p className="text-zinc-100">{meme.top_text}</p>
+                          <p className="text-zinc-400 text-sm">
+                            {new Date(meme.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/generator-memow/edit/${meme.id}`}>
+                          <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <DeleteMemeButton memeId={meme.id} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {userQuizzes?.slice(0, 3).map(quiz => (
+                  <div key={quiz.id} className="p-4 border border-zinc-800/80 bg-black/50 backdrop-blur-sm rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-zinc-100">{quiz.title}</h4>
+                        <p className="text-zinc-400 text-sm">
+                          {quiz.description?.slice(0, 100)}...
+                        </p>
+                        <p className="text-zinc-400 text-sm mt-2">
+                          {new Date(quiz.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/generator-quizow/edit/${quiz.id}`}>
+                          <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <DeleteQuizButton quizId={quiz.id} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold mb-6 text-zinc-100">Zarządzanie Profilem</h2>
+            <ClientProfileWrapper 
+              userData={userData}
+              defaultValues={defaultValues}
+            />
           </div>
         </div>
       </main>

@@ -39,7 +39,6 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
     title: '',
     subtitle: '',
     description: '',
-    timePerQuestion: 30,
     difficulty: 'medium',
     rules: '',
     icon: 'star',
@@ -49,32 +48,51 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
   const supabase = createClientComponentClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      alert("Musisz być zalogowany, aby utworzyć turniej.")
-      return
-    }
+    e.preventDefault();
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Musisz być zalogowany, aby utworzyć turniej.");
+        return;
+      }
 
-    const { error } = await supabase.from('quizzes').insert({
-      user_id: user.id,
-      title: tournamentData.title,
-      subtitle: tournamentData.subtitle,
-      description: tournamentData.description,
-      timePerQuestion: tournamentData.timePerQuestion,
-      questions: rounds,
-      difficulty: tournamentData.difficulty,
-      rules: tournamentData.rules,
-      icon: tournamentData.icon
-    })
+      // Sprawdź czy są pytania
+      if (rounds.length === 0) {
+        alert("Dodaj przynajmniej jedno pytanie do turnieju.");
+        return;
+      }
 
-    if (error) {
-      console.error("Błąd podczas zapisywania turnieju:", error)
-      alert("Wystąpił błąd podczas zapisywania turnieju.")
-    } else {
-      alert("Turniej został zapisany pomyślnie!")
+      // Przygotuj dane do zapisania (usuń time_per_question)
+      const quizData = {
+        user_id: user.id,
+        title: tournamentData.title,
+        subtitle: tournamentData.subtitle || null,
+        description: tournamentData.description,
+        questions: rounds,
+        difficulty: tournamentData.difficulty,
+        rules: tournamentData.rules,
+        icon: tournamentData.icon
+      };
+
+      const { data, error } = await supabase
+        .from('quizzes')
+        .insert([quizData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Błąd podczas zapisywania turnieju:", error);
+        alert(`Wystąpił błąd podczas zapisywania turnieju: ${error.message}`);
+      } else {
+        alert("Turniej został zapisany pomyślnie!");
+        window.location.href = '/quizy';
+      }
+    } catch (error) {
+      console.error("Nieoczekiwany błąd:", error);
+      alert("Wystąpił nieoczekiwany błąd podczas zapisywania turnieju.");
     }
-  }
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-3xl">
