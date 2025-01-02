@@ -63,7 +63,7 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
         return;
       }
 
-      // Przygotuj dane do zapisania (usuń time_per_question)
+      // Przygotuj dane do zapisania
       const quizData = {
         user_id: user.id,
         title: tournamentData.title,
@@ -75,7 +75,7 @@ export default function TournamentGenerator({ rounds }: { rounds: Round[] }) {
         icon: tournamentData.icon
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('quizzes')
         .insert([quizData])
         .select()

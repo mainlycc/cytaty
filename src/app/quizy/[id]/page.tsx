@@ -31,14 +31,6 @@ interface GameState {
   isGameFinished: boolean;
 }
 
-interface UserAnswer {
-  quiz_id: string;
-  user_id: string;
-  score: number;
-  answers: number[];
-  completed_at: string;
-}
-
 export default function QuizPage() {
   const params = useParams();
   const id = params.id as string;
@@ -212,7 +204,7 @@ export default function QuizPage() {
     };
 
     fetchQuiz();
-  }, [id]);
+  }, [id, supabase]);
 
   if (!quiz) {
     return (

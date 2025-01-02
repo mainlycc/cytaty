@@ -6,12 +6,18 @@ import { Trophy, Film } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
+interface QuizQuestion {
+  question: string;
+  answers: string[];
+  correctAnswer: number;
+}
+
 interface Quiz {
   id: string;
   title: string;
   description: string;
   difficulty: string;
-  questions: any[];
+  questions: QuizQuestion[];
   icon?: string;
   rules: string;
   user_id: string;
@@ -112,7 +118,7 @@ export default function HomePage() {
 
     fetchQuizzes()
     fetchRankings()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="min-h-screen bg-background p-6">
