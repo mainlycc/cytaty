@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import Draggable from "react-draggable"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
@@ -9,6 +10,19 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
 import Image from 'next/image';
 
+type MemeData = {
+  id?: string
+  user_id: string
+  image_url: string
+  top_text: string | null
+  bottom_text: string | null
+  created_at: string
+  hashtags: string[]
+  likes: number
+  top_position: { x: number; y: number }
+  bottom_position: { x: number; y: number }
+}
+
 export function MemeGenerator() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [topText, setTopText] = useState("")
@@ -16,7 +30,11 @@ export function MemeGenerator() {
   const [previewUrl, setPreviewUrl] = useState<string>("")
   const [tags, setTags] = useState<string[]>([])
   const [currentTag, setCurrentTag] = useState("")
+  const [topPosition, setTopPosition] = useState({ x: 0, y: 0 })
+  const [bottomPosition, setBottomPosition] = useState({ x: 0, y: 0 })
   const supabase = createClientComponentClient()
+  const topTextRef = useRef<HTMLDivElement>(null)
+  const bottomTextRef = useRef<HTMLDivElement>(null)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -43,68 +61,102 @@ export function MemeGenerator() {
 
   const handleSave = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Nie znaleziono użytkownika')
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.user) {
+        throw new Error('Musisz być zalogowany aby zapisać mem')
+      }
 
-      const file = selectedImage
-      if (!file) throw new Error('Nie wybrano obrazu')
+      if (!selectedImage) {
+        throw new Error('Nie wybrano obrazu')
+      }
 
-      if (file.size > 5 * 1024 * 1024) {
+      // Sprawdzanie rozmiaru pliku
+      if (selectedImage.size > 5 * 1024 * 1024) {
         throw new Error('Plik jest za duży. Maksymalny rozmiar to 5MB')
       }
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']
-      if (!allowedTypes.includes(file.type)) {
+      if (!allowedTypes.includes(selectedImage.type)) {
         throw new Error('Niedozwolony format pliku. Dozwolone formaty to: JPG, PNG, GIF')
       }
 
+      // Generowanie unikalnej nazwy pliku
       const timestamp = new Date().getTime()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}-${timestamp}.${fileExt}`
-      const filePath = `${fileName}`
+      const fileExt = selectedImage.name.split('.').pop()
+      const fileName = `${session.user.id}-${timestamp}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      // Upload pliku do storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('memes')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+        .upload(fileName, selectedImage)
 
       if (uploadError) {
-        console.error('Błąd upload:', uploadError)
-        throw uploadError
+        console.error('Błąd podczas uploadu:', uploadError)
+        throw new Error(`Błąd podczas uploadu: ${uploadError.message}`)
       }
 
+      // Pobranie publicznego URL
       const { data: urlData } = supabase.storage
         .from('memes')
-        .getPublicUrl(filePath)
+        .getPublicUrl(fileName)
 
-      if (!urlData.publicUrl) {
+      if (!urlData?.publicUrl) {
         throw new Error('Nie udało się uzyskać publicznego URL')
       }
 
-      const { error: dbError } = await supabase.from('memes').insert({
-        user_id: user.id,
+      const memeData: MemeData = {
+        user_id: session.user.id,
         image_url: urlData.publicUrl,
-        top_text: topText,
-        bottom_text: bottomText
-      })
-
-      if (dbError) {
-        console.error('Błąd bazy danych:', dbError)
-        throw dbError
+        top_text: topText || null,
+        bottom_text: bottomText || null,
+        created_at: new Date().toISOString(),
+        hashtags: tags.length > 0 ? tags : ['mem'],
+        likes: 0,
+        top_position: topPosition,
+        bottom_position: bottomPosition
       }
 
-      toast.success('Mem został zapisany!')
+      const { error: insertError } = await supabase
+        .from('memes')
+        .insert([memeData])
+
+      if (insertError) {
+        console.error('Błąd podczas zapisywania do bazy:', insertError)
+        throw new Error(`Błąd podczas zapisywania: ${insertError.message}`)
+      }
+
+      // Czyszczenie formularza po udanym zapisie
       setSelectedImage(null)
       setTopText('')
       setBottomText('')
       setPreviewUrl('')
       setTags([])
+      setTopPosition({ x: 0, y: 0 })
+      setBottomPosition({ x: 0, y: 0 })
       
-    } catch (error: unknown) {
-      console.error('Błąd:', error)
-      toast.error((error as Error).message || 'Wystąpił błąd podczas zapisywania mema')
+      toast.success('Mem został pomyślnie zapisany!')
+
+    } catch (error) {
+      console.error('Szczegóły błędu:', {
+        error,
+        type: typeof error,
+        message: error instanceof Error ? error.message : 'Nieznany błąd'
+      })
+
+      if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error('Wystąpił nieznany błąd podczas zapisywania mema')
+      }
+    }
+  }
+
+  const handleDragStop = (position: { x: number; y: number }, isTop: boolean) => {
+    if (isTop) {
+      setTopPosition(position)
+    } else {
+      setBottomPosition(position)
     }
   }
 
@@ -185,7 +237,8 @@ export function MemeGenerator() {
 
           <Button 
             onClick={handleSave}
-            className="w-full bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50"
+            disabled={!selectedImage}
+            className="w-full bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Zapisz mem
           </Button>
@@ -203,19 +256,48 @@ export function MemeGenerator() {
                   className="w-full h-full object-contain"
                   fill
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-between p-4">
-                  <h2 className="text-2xl font-bold text-white uppercase text-stroke">
-                    {topText}
-                  </h2>
-                  <h2 className="text-2xl font-bold text-white uppercase text-stroke">
-                    {bottomText}
-                  </h2>
+                <div className="absolute inset-0">
+                  {topText && (
+                    <Draggable
+                      nodeRef={topTextRef as any}
+                      bounds="parent"
+                      position={topPosition}
+                      onStop={(_, data) => handleDragStop({ x: data.x, y: data.y }, true)}
+                    >
+                      <div 
+                        ref={topTextRef}
+                        className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
+                      >
+                        {topText}
+                      </div>
+                    </Draggable>
+                  )}
+                  {bottomText && (
+                    <Draggable
+                      nodeRef={bottomTextRef as any}
+                      bounds="parent"
+                      position={bottomPosition}
+                      onStop={(_, data) => handleDragStop({ x: data.x, y: data.y }, false)}
+                    >
+                      <div 
+                        ref={bottomTextRef}
+                        className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
+                      >
+                        {bottomText}
+                      </div>
+                    </Draggable>
+                  )}
                 </div>
               </div>
             ) : (
-              <p className="text-zinc-500">Wybierz zdjęcie, aby rozpocząć</p>
+              <p className="text-zinc-500">
+                Wybierz zdjęcie, aby rozpocząć
+              </p>
             )}
           </div>
+          <p className="text-zinc-400 text-sm mt-4 text-center">
+            Przeciągnij teksty, aby zmienić ich położenie
+          </p>
         </CardContent>
       </Card>
     </div>
