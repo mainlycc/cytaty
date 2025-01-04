@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, MutableRefObject } from "react"
+import { useState, useRef } from "react"
 import Draggable from "react-draggable"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
