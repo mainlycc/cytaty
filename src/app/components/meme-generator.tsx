@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, MutableRefObject } from "react"
 import Draggable from "react-draggable"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
@@ -9,6 +9,7 @@ import { Card, CardContent } from "./ui/card"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
 import Image from 'next/image';
+import type { DraggableData, DraggableEvent } from 'react-draggable';
 
 type MemeData = {
   id?: string
@@ -29,10 +30,12 @@ export function MemeGenerator() {
   const [bottomText, setBottomText] = useState("")
   const [previewUrl, setPreviewUrl] = useState<string>("")
   const [tags, setTags] = useState<string[]>([])
-  const [currentTag, setCurrentTag] = useState("")
-  const [topPosition, setTopPosition] = useState({ x: 0, y: 0 })
-  const [bottomPosition, setBottomPosition] = useState({ x: 0, y: 0 })
+  const [currentTag, setCurrentTag] = useState<string>("")
+  const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const supabase = createClientComponentClient()
+  const topTextDraggableRef = useRef<HTMLElement>(null)
+  const bottomTextDraggableRef = useRef<HTMLElement>(null)
   const topTextRef = useRef<HTMLDivElement>(null)
   const bottomTextRef = useRef<HTMLDivElement>(null)
 
@@ -87,7 +90,7 @@ export function MemeGenerator() {
       const fileName = `${session.user.id}-${timestamp}.${fileExt}`
 
       // Upload pliku do storage
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('memes')
         .upload(fileName, selectedImage)
 
@@ -259,13 +262,20 @@ export function MemeGenerator() {
                 <div className="absolute inset-0">
                   {topText && (
                     <Draggable
-                      nodeRef={topTextRef as any}
+                      nodeRef={topTextDraggableRef as React.RefObject<HTMLElement>}
                       bounds="parent"
                       position={topPosition}
-                      onStop={(_, data) => handleDragStop({ x: data.x, y: data.y }, true)}
+                      onStop={(e: DraggableEvent, data: DraggableData) => 
+                        handleDragStop({ x: data.x, y: data.y }, true)
+                      }
                     >
                       <div 
-                        ref={topTextRef}
+                        ref={(element) => {
+                          if (element) {
+                            topTextRef.current = element;
+                            (topTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
+                          }
+                        }}
                         className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
                       >
                         {topText}
@@ -274,13 +284,20 @@ export function MemeGenerator() {
                   )}
                   {bottomText && (
                     <Draggable
-                      nodeRef={bottomTextRef as any}
+                      nodeRef={bottomTextDraggableRef as React.RefObject<HTMLElement>}
                       bounds="parent"
                       position={bottomPosition}
-                      onStop={(_, data) => handleDragStop({ x: data.x, y: data.y }, false)}
+                      onStop={(e: DraggableEvent, data: DraggableData) => 
+                        handleDragStop({ x: data.x, y: data.y }, false)
+                      }
                     >
                       <div 
-                        ref={bottomTextRef}
+                        ref={(element) => {
+                          if (element) {
+                            bottomTextRef.current = element;
+                            (bottomTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
+                          }
+                        }}
                         className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
                       >
                         {bottomText}
