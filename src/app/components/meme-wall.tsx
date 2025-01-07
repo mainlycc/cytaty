@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent } from "./ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Button } from "./ui/button"
 import { Share2, ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import Link from 'next/link'
 
-const MEMES_PER_PAGE = 5
+const MEMES_PER_PAGE = 50
 const MAX_VISIBLE_PAGES = 5
 
 type Meme = {
@@ -27,6 +27,10 @@ type Meme = {
 }
 
 type SortPeriod = 'all' | 'day' | 'week' | 'month'
+
+interface MemeWallProps {
+  initialPeriod: SortPeriod
+}
 
 export function MemeWall() {
   const [memes, setMemes] = useState<Meme[]>([])
@@ -163,22 +167,55 @@ export function MemeWall() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
-      <div className="flex items-center justify-end">
-        <Select value={sortPeriod} onValueChange={handleSortChange}>
-          <SelectTrigger className="w-[180px] bg-black/50 backdrop-blur-sm">
-            <SelectValue placeholder="Wybierz okres" />
-          </SelectTrigger>
-          <SelectContent className="bg-black/90">
-            <SelectItem value="all">Wszystkie</SelectItem>
-            <SelectItem value="day">Ostatni dzień</SelectItem>
-            <SelectItem value="week">Ostatni tydzień</SelectItem>
-            <SelectItem value="month">Ostatni miesiąc</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex gap-2">
+        <Button
+          variant={sortPeriod === 'all' ? 'default' : 'outline'}
+          onClick={() => handleSortChange('all')}
+          className={`${
+            sortPeriod === 'all'
+              ? "bg-white text-zinc-950 hover:bg-white/90"
+              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+          }`}
+        >
+          Wszystkie
+        </Button>
+        <Button
+          variant={sortPeriod === 'day' ? 'default' : 'outline'}
+          onClick={() => handleSortChange('day')}
+          className={`${
+            sortPeriod === 'day'
+              ? "bg-white text-zinc-900 hover:bg-white/90"
+              : "bg-black/100 backdrop-blur-sm hover:bg-zinc-200"
+          }`}
+        >
+          Dzisiaj
+        </Button>
+        <Button
+          variant={sortPeriod === 'week' ? 'default' : 'outline'}
+          onClick={() => handleSortChange('week')}
+          className={`${
+            sortPeriod === 'week'
+              ? "bg-white text-black hover:bg-white/90"
+              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+          }`}
+        >
+          W tym tygodniu
+        </Button>
+        <Button
+          variant={sortPeriod === 'month' ? 'default' : 'outline'}
+          onClick={() => handleSortChange('month')}
+          className={`${
+            sortPeriod === 'month'
+              ? "bg-white text-black hover:bg-white/90"
+              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+          }`}
+        >
+          W tym miesiącu
+        </Button>
       </div>
       
       {memes.map((meme) => (
-        <Card key={meme.id} className="bg-black/50 backdrop-blur-sm">
+        <Card key={meme.id} className="bg-zinc-900/50 backdrop-blur-sm border-zinc-800">
           <CardContent className="p-6">
             <div className="relative aspect-[4/3]">
               <img
@@ -189,7 +226,7 @@ export function MemeWall() {
               <div className="absolute inset-0">
                 {meme.top_text && (
                   <h2 
-                    className="text-2xl md:text-3xl font-bold text-white uppercase text-stroke text-center absolute"
+                    className="text-2xl md:text-3xl font-bold uppercase text-center absolute text-white [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)]"
                     style={{
                       left: meme.top_position?.x || '50%',
                       top: meme.top_position?.y || '10%',
@@ -201,7 +238,7 @@ export function MemeWall() {
                 )}
                 {meme.bottom_text && (
                   <h2 
-                    className="text-2xl md:text-3xl font-bold text-white uppercase text-stroke text-center absolute"
+                    className="text-2xl md:text-3xl font-bold uppercase text-center absolute text-white [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)]"
                     style={{
                       left: meme.bottom_position?.x || '50%',
                       bottom: meme.bottom_position?.y || '10%',
@@ -213,14 +250,14 @@ export function MemeWall() {
                 )}
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-between text-zinc-400">
+            <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span>Liczba polubień: {meme.likes || 0}</span>
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    className="text-zinc-400 hover:text-red-500 hover:bg-zinc-800 p-2"
+                    className="text-white hover:text-red-500 hover:bg-zinc-800 p-2"
                     onClick={() => handleLike(meme.id)}
                     aria-label="Polub mema"
                   >
@@ -228,10 +265,10 @@ export function MemeWall() {
                   </Button>
                 </div>
                 <div className="flex flex-col gap-1 text-sm">
-                  <span className="text-zinc-300">
+                  <span className="text-zinc-400">
                     Autor: {meme.user?.username || 'Anonim'}
                   </span>
-                  <span className="text-zinc-500">
+                  <span className="text-zinc-400">
                     Dodano: {formatDate(meme.created_at)}
                   </span>
                 </div>
@@ -240,7 +277,7 @@ export function MemeWall() {
                     {meme.hashtags.map((tag, index) => (
                       <span 
                         key={`${meme.id}-${index}`}
-                        className="text-sm bg-zinc-800/50 text-zinc-300 px-2 py-1 rounded-full"
+                        className="text-sm bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full"
                       >
                         #{tag}
                       </span>
@@ -251,7 +288,7 @@ export function MemeWall() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                className="text-white hover:text-white hover:bg-zinc-800"
                 onClick={() => handleShare(meme)}
               >
                 <Share2 className="w-4 h-4 mr-2" />

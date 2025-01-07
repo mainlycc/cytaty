@@ -4,8 +4,19 @@ import { useState } from 'react'
 import { Button } from "./ui/button"
 import { Trash2 } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog"
 
-export function DeleteMemeButton({ memeId }: { memeId: string }) {
+export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
   const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClientComponentClient()
 
@@ -32,15 +43,34 @@ export function DeleteMemeButton({ memeId }: { memeId: string }) {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="text-red-400 hover:text-red-300"
-      onClick={handleDelete}
-      disabled={isDeleting}
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-red-500">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="bg-zinc-900 border border-zinc-800">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-zinc-100">
+            Czy na pewno chcesz usunąć ten mem?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-zinc-400">
+            Ta akcja jest nieodwracalna. Mem zostanie trwale usunięty z systemu.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border-zinc-700">
+            Anuluj
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-red-500 hover:bg-red-600 text-white border-0"
+          >
+            Usuń
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
@@ -49,8 +79,6 @@ export function DeleteQuizButton({ quizId }: { quizId: string }) {
   const supabase = createClientComponentClient()
 
   const handleDelete = async () => {
-    if (!confirm('Czy na pewno chcesz usunąć ten quiz?')) return;
-    
     setIsDeleting(true)
     try {
       const { error } = await supabase
@@ -60,7 +88,6 @@ export function DeleteQuizButton({ quizId }: { quizId: string }) {
 
       if (error) throw error
       
-      // Odśwież stronę po usunięciu
       window.location.reload()
     } catch (error) {
       console.error('Błąd podczas usuwania quizu:', error)
@@ -71,14 +98,33 @@ export function DeleteQuizButton({ quizId }: { quizId: string }) {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="text-red-400 hover:text-red-300"
-      onClick={handleDelete}
-      disabled={isDeleting}
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-red-500">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="bg-zinc-900 border border-zinc-800">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-zinc-100">
+            Czy na pewno chcesz usunąć ten quiz?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-zinc-400">
+            Ta akcja jest nieodwracalna. Quiz zostanie trwale usunięty z systemu.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border-zinc-700">
+            Anuluj
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-red-500 hover:bg-red-600 text-white border-0"
+          >
+            Usuń
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 } 
