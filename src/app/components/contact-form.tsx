@@ -5,14 +5,8 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
+import { Card, CardContent } from "./ui/card"
 import { toast } from "sonner"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card"
 
 interface ContactFormProps {
   currentUser?: {
@@ -67,19 +61,15 @@ export function ContactForm({ currentUser }: ContactFormProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Formularz kontaktowy</CardTitle>
-        <CardDescription>
-          Wypełnij poniższy formularz, aby się z nami skontaktować
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {!currentUser && (
             <>
               <div className="grid gap-2">
-                <Label htmlFor="name">Imię i nazwisko</Label>
+                <Label htmlFor="name" className="text-zinc-400">
+                  Imię i nazwisko
+                </Label>
                 <Input
                   id="name"
                   name="name"
@@ -87,12 +77,14 @@ export function ContactForm({ currentUser }: ContactFormProps) {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className="bg-zinc-900/50 border-zinc-800/80"
+                  className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100 placeholder:text-zinc-500"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-zinc-400">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   name="email"
@@ -101,14 +93,16 @@ export function ContactForm({ currentUser }: ContactFormProps) {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="bg-zinc-900/50 border-zinc-800/80"
+                  className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100 placeholder:text-zinc-500"
                 />
               </div>
             </>
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="subject">Temat</Label>
+            <Label htmlFor="subject" className="text-zinc-400">
+              Temat
+            </Label>
             <Input
               id="subject"
               name="subject"
@@ -116,12 +110,14 @@ export function ContactForm({ currentUser }: ContactFormProps) {
               required
               value={formData.subject}
               onChange={handleChange}
-              className="bg-zinc-900/50 border-zinc-800/80"
+              className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100 placeholder:text-zinc-500"
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="message">Wiadomość</Label>
+            <Label htmlFor="message" className="text-zinc-400">
+              Wiadomość
+            </Label>
             <Textarea
               id="message"
               name="message"
@@ -129,13 +125,13 @@ export function ContactForm({ currentUser }: ContactFormProps) {
               required
               value={formData.message}
               onChange={handleChange}
-              className="min-h-[150px] bg-zinc-900/50 border-zinc-800/80"
+              className="min-h-[150px] bg-zinc-900/50 border-zinc-800/80 text-zinc-100 placeholder:text-zinc-500 resize-none"
             />
           </div>
 
           <Button 
             type="submit" 
-            className="w-full bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50"
+            className="w-full bg-red-950/50 text-red-500 border border-red-800 hover:bg-red-900/50 transition-colors"
             disabled={loading}
           >
             {loading ? "Wysyłanie..." : "Wyślij wiadomość"}

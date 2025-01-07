@@ -2,7 +2,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
-import { Edit } from "lucide-react"
+import { Edit, ShieldAlert } from "lucide-react"
 import { ClientProfileWrapper } from "@/app/components/profile-components"
 import Link from "next/link"
 import { DeleteMemeButton, DeleteQuizButton } from "@/app/components/delete-buttons"
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
 
   let { data: userData, error } = await supabase
     .from('users')
-    .select('*')
+    .select('*, role')
     .eq('id', session.user.id)
     .single()
 
@@ -70,6 +70,25 @@ export default async function DashboardPage() {
       <main className="container mx-auto px-4 py-8 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-8">
+            {userData?.role === 'admin' && (
+              <div className="space-y-6">
+                <h2 className="text-lg font-semibold text-zinc-100">Panel Administratora</h2>
+                <Link href="/admin/dashboard">
+                  <div className="rounded-lg border border-red-800/80 bg-red-950/20 backdrop-blur-sm p-6 hover:bg-red-900/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <ShieldAlert className="w-6 h-6 text-red-500" />
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium text-red-500">Panel Administratora</h3>
+                        <p className="text-sm text-red-400/80">
+                          Zarządzaj użytkownikami, treściami i ustawieniami strony
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            )}
+
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-zinc-100">Twoje Narzędzia</h2>
               <div className="grid gap-6">

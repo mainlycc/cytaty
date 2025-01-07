@@ -78,21 +78,44 @@ export default function MovieDetailsClient() {
   }, [id]);
 
   if (isLoading) {
-    return <div className="text-center p-4 text-white">Ładowanie...</div>;
+    return (
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+        <div className="relative p-6 flex items-center justify-center">
+          <div className="text-xl text-white">Ładowanie...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center p-4 text-red-500">{error}</div>;
+    return (
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+        <div className="relative p-6 flex items-center justify-center">
+          <div className="text-center p-4 text-red-500">{error}</div>
+        </div>
+      </div>
+    );
   }
 
   if (!movie) {
-    return <div className="text-center p-4 text-white">Nie znaleziono filmu</div>;
+    return (
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+        <div className="relative p-6 flex items-center justify-center">
+          <div className="text-center p-4 text-white">Nie znaleziono filmu</div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto py-8 max-w-3xl">
-        <Card className="bg-zinc-900/50 backdrop-blur-sm">
+    <div className="relative min-h-screen">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+      
+      <div className="relative container mx-auto py-8 max-w-3xl">
+        <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
           <CardHeader>
             <CardTitle className="text-4xl font-bold mb-4 text-white">{movie.title}</CardTitle>
           </CardHeader>
@@ -106,29 +129,51 @@ export default function MovieDetailsClient() {
                 className="rounded-lg"
               />
             </div>
-            <div className="text-sm text-gray-300">
-              <p className="mb-6"><span className="font-bold">Opis:</span> {movie.overview}</p>
-              <p className="mb-6"><span className="font-bold">Data premiery:</span> {movie.release_date}</p>
-              {director && <p className="mb-6"><span className="font-bold">Reżyser:</span> {director.name}</p>}
-              <p className="mb-6"><span className="font-bold">Gatunki:</span> {movie.genres.map((genre: Genre) => genre.name).join(', ')}</p>
-              <p className="mb-6"><span className="font-bold">Ocena:</span> {movie.vote_average} / 10</p>
-              <p className="mb-6"><span className="font-bold">Obsada:</span></p>
-              <ul className="list-disc list-inside mb-6">
+            <div className="text-sm text-zinc-300">
+              <p className="mb-6">
+                <span className="font-bold text-white">Opis:</span> {movie.overview}
+              </p>
+              <p className="mb-6">
+                <span className="font-bold text-white">Data premiery:</span> {movie.release_date}
+              </p>
+              {director && (
+                <p className="mb-6">
+                  <span className="font-bold text-white">Reżyser:</span> {director.name}
+                </p>
+              )}
+              <p className="mb-6">
+                <span className="font-bold text-white">Gatunki:</span> {movie.genres.map((genre: Genre) => genre.name).join(', ')}
+              </p>
+              <p className="mb-6">
+                <span className="font-bold text-white">Ocena:</span> {movie.vote_average} / 10
+              </p>
+              <p className="mb-6">
+                <span className="font-bold text-white">Obsada:</span>
+              </p>
+              <ul className="list-disc list-inside mb-6 text-zinc-300">
                 {cast.map((member) => (
-                  <li key={member.name}>{member.name} jako {member.character}</li>
+                  <li key={member.name}>
+                    <span className="text-white">{member.name}</span> jako {member.character}
+                  </li>
                 ))}
               </ul>
-              <p className="mb-6"><span className="font-bold">Dostępne na platformach:</span></p>
+              <p className="mb-6">
+                <span className="font-bold text-white">Dostępne na platformach:</span>
+              </p>
               <div className="flex space-x-2">
                 {watchProviders.map((provider) => (
-                  <Image
-                    key={provider.provider_name}
-                    src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
-                    alt={provider.provider_name}
-                    width={45}
-                    height={45}
-                    className="rounded"
-                  />
+                  <div key={provider.provider_name} className="relative group">
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
+                      alt={provider.provider_name}
+                      width={45}
+                      height={45}
+                      className="rounded transition-transform hover:scale-110"
+                    />
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
+                      {provider.provider_name}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

@@ -47,11 +47,22 @@ const NavItem = ({ href, children, items }: { href: string; children: React.Reac
 export function NavMenu() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userData, setUserData] = useState<{ username?: string, avatar?: string | null } | null>(null)
   const supabase = createClientComponentClient()
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     setIsLoggedIn(!!session)
+    
+    if (session?.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('username, avatar')
+        .eq('id', session.user.id)
+        .single()
+      
+      setUserData(userData)
+    }
   }
 
   useEffect(() => {
@@ -61,6 +72,11 @@ export function NavMenu() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session)
+      if (session?.user) {
+        checkAuth()
+      } else {
+        setUserData(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -96,15 +112,31 @@ export function NavMenu() {
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
                 <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100 text-base">
+                  <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-400 text-base">
                     Dashboard
                   </Button>
                 </Link>
-                <span className="text-sm text-zinc-400">Zalogowano</span>
+                <div className="flex items-center gap-2">
+                  {userData?.avatar ? (
+                    <Image
+                      src={userData.avatar}
+                      alt={userData.username || 'Avatar użytkownika'}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
+                      <span className="text-sm text-zinc-400">
+                        {userData?.username?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-zinc-400 hover:text-zinc-100 text-base"
+                  className="text-zinc-400 hover:text-zinc-400 text-base"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4 mr-2" />

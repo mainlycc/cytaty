@@ -451,9 +451,9 @@ export function MemeWall() {
                   <span>{meme.likes_count || 0}</span>
                 </Button>
                 <Button 
-                  variant="secondary" 
+                  variant="default"
                   size="sm"
-                  className="text-zinc-300 hover:text-white hover:bg-black/50 border border-white/10"
+                  className="bg-red-950/50 text-red-500 border border-red-800 hover:bg-red-900/50"
                   onClick={() => handleShare(meme)}
                 >
                   <Share2 className="w-4 h-4 mr-2" />
