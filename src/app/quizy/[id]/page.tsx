@@ -124,26 +124,26 @@ export default function QuizPage() {
     const currentQuestion = quiz?.questions[gameState.currentQuestionIndex];
     
     return (
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
+      <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+        <div className="p-6 space-y-6">
+          <div className="flex justify-between items-center text-white">
             <span className="text-lg font-medium">
               Pytanie {gameState.currentQuestionIndex + 1} z {quiz?.questions.length}
             </span>
             <span className="text-lg font-medium flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+              <Clock className="h-5 w-5 text-red-500" />
               {gameState.timeLeft}s
             </span>
           </div>
           
           <div className="py-4">
-            <h2 className="text-xl font-semibold mb-4">{currentQuestion?.question}</h2>
+            <h2 className="text-xl font-semibold mb-4 text-white">{currentQuestion?.question}</h2>
             <div className="grid gap-3">
               {currentQuestion?.answers.map((answer, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-full text-left justify-start p-4 h-auto"
+                  className="w-full text-left justify-start p-4 h-auto bg-black/30 text-white border-white/10 hover:bg-black/40 hover:text-white"
                   onClick={() => handleAnswerSubmit(index)}
                 >
                   {answer}
@@ -153,7 +153,7 @@ export default function QuizPage() {
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="font-medium">Wynik: {gameState.score}</span>
+            <span className="font-medium text-white">Wynik: {gameState.score}</span>
           </div>
         </div>
       </Card>
@@ -161,11 +161,11 @@ export default function QuizPage() {
   };
 
   const GameResults = () => (
-    <Card className="p-6">
-      <div className="text-center space-y-6">
-        <h2 className="text-2xl font-bold">Quiz zakończony!</h2>
-        <div className="text-4xl font-bold text-primary">{gameState.score} punktów</div>
-        <div className="space-y-2">
+    <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+      <div className="p-6 text-center space-y-6">
+        <h2 className="text-2xl font-bold text-white">Quiz zakończony!</h2>
+        <div className="text-4xl font-bold text-red-500">{gameState.score} punktów</div>
+        <div className="space-y-2 text-zinc-300">
           <p>Poprawne odpowiedzi: {
             gameState.answers.filter((answer, index) => 
               answer === quiz?.questions[index].correctAnswer
@@ -173,11 +173,17 @@ export default function QuizPage() {
           } z {quiz?.questions.length}</p>
         </div>
         <div className="flex gap-4 justify-center">
-          <Button onClick={() => window.location.reload()}>
+          <Button 
+            onClick={() => window.location.reload()}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
             Zagraj ponownie
           </Button>
           <Link href="/quizy">
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              className="bg-black/30 text-white border-white/10 hover:bg-black/40"
+            >
               Wróć do listy quizów
             </Button>
           </Link>
@@ -208,13 +214,15 @@ export default function QuizPage() {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <div className="text-xl">Ładowanie...</div>
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+        <div className="relative p-6 flex items-center justify-center">
+          <div className="text-xl text-white">Ładowanie...</div>
+        </div>
       </div>
     );
   }
 
-  // Domyślne zasady, jeśli nie są zdefiniowane w bazie danych
   const defaultRules = [
     `Quiz składa się z ${quiz.questions.length} pytań`,
     "Na każde pytanie jest tylko jedna prawidłowa odpowiedź",
@@ -224,67 +232,73 @@ export default function QuizPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        {!gameState.isGameActive && !gameState.isGameFinished ? (
-          <>
-            <Link
-              href="/quizy"
-              className="text-sm text-muted-foreground hover:text-primary mb-6 inline-block"
-            >
-              ← Powrót do listy quizów
-            </Link>
-            <Card className="p-6">
-              <div className="grid gap-6">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold">{quiz.title}</h1>
-                  <p className="text-muted-foreground">{quiz.description}</p>
-                </div>
+    <div className="relative min-h-screen">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+      
+      <div className="relative p-6">
+        <div className="max-w-4xl mx-auto">
+          {!gameState.isGameActive && !gameState.isGameFinished ? (
+            <>
+              <Link
+                href="/quizy"
+                className="text-sm text-zinc-400 hover:text-white mb-6 inline-flex items-center gap-2"
+              >
+                ← Powrót do listy quizów
+              </Link>
+              <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+                <div className="p-6">
+                  <div className="grid gap-6">
+                    <div className="space-y-2">
+                      <h1 className="text-3xl font-bold text-white">{quiz.title}</h1>
+                      <p className="text-zinc-400">{quiz.description}</p>
+                    </div>
 
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <span>{quiz.timePerQuestion} sekund na pytanie</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <HelpCircle className="h-5 w-5 text-primary" />
-                    <span>{quiz.questions.length} pytań</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-primary" />
-                    <span>Poziom: {quiz.difficulty}</span>
-                  </div>
-                </div>
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <Clock className="h-5 w-5 text-red-500" />
+                        <span>{quiz.timePerQuestion} sekund na pytanie</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <HelpCircle className="h-5 w-5 text-red-500" />
+                        <span>{quiz.questions.length} pytań</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <Award className="h-5 w-5 text-red-500" />
+                        <span>Poziom: {quiz.difficulty}</span>
+                      </div>
+                    </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold">Zasady quizu</h2>
-                  </div>
-                  <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                    {defaultRules.map((rule, index) => (
-                      <li key={index}>{rule}</li>
-                    ))}
-                  </ul>
-                </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        <h2 className="text-xl font-semibold text-white">Zasady quizu</h2>
+                      </div>
+                      <ul className="list-disc list-inside space-y-2 text-zinc-400">
+                        {defaultRules.map((rule, index) => (
+                          <li key={index}>{rule}</li>
+                        ))}
+                      </ul>
+                    </div>
 
-                <div className="flex justify-center">
-                  <Button 
-                    size="lg" 
-                    className="w-full sm:w-auto"
-                    onClick={startQuiz}
-                  >
-                    Rozpocznij Quiz
-                  </Button>
+                    <div className="flex justify-center">
+                      <Button 
+                        size="lg" 
+                        className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
+                        onClick={startQuiz}
+                      >
+                        Rozpocznij Quiz
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          </>
-        ) : gameState.isGameFinished ? (
-          <GameResults />
-        ) : (
-          <ActiveGame />
-        )}
+              </Card>
+            </>
+          ) : gameState.isGameFinished ? (
+            <GameResults />
+          ) : (
+            <ActiveGame />
+          )}
+        </div>
       </div>
     </div>
   );

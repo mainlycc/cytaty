@@ -121,71 +121,82 @@ export default function HomePage() {
   }, [supabase])
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <h1 className="text-4xl font-bold text-center mb-8">Filmowe Quizy</h1>
-      <div className="grid md:grid-cols-2 gap-6 max-w-7xl mx-auto">
-        {/* Ranking graczy */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-yellow-500" />
-            Ranking graczy
-          </h2>
-          <div className="space-y-4">
-            {rankings.length > 0 ? (
-              rankings.map((player, index) => (
-                <div
-                  key={player.user_id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold text-lg w-6 ${index < 3 ? 'text-yellow-500' : ''}`}>
-                      {index + 1}.
-                    </span>
-                    <div>
-                      <p className="font-medium">{player.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Rozegrane gry: {player.games_played}
-                      </p>
+    <div className="relative min-h-screen">
+      {/* Gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
+      
+      
+      {/* Content */}
+      <div className="relative p-6">
+        <h1 className="text-4xl font-bold text-center mb-8 text-white">Filmowe Quizy</h1>
+        <div className="grid md:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* Ranking graczy */}
+          <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+            <div className="p-6">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-white">
+                <Trophy className="h-6 w-6 text-yellow-500" />
+                Ranking graczy
+              </h2>
+              <div className="space-y-4">
+                {rankings.length > 0 ? (
+                  rankings.map((player, index) => (
+                    <div
+                      key={player.user_id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-white/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold text-lg w-6 ${index < 3 ? 'text-yellow-500' : 'text-white'}`}>
+                          {index + 1}.
+                        </span>
+                        <div>
+                          <p className="font-medium text-white">{player.name}</p>
+                          <p className="text-sm text-zinc-400">
+                            Rozegrane gry: {player.games_played}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="font-bold text-white">{player.total_points} pkt</div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center text-zinc-400 py-4">
+                    Brak wyników do wyświetlenia
                   </div>
-                  <div className="font-bold text-primary">{player.total_points} pkt</div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                Brak wyników do wyświetlenia
+                )}
               </div>
-            )}
-          </div>
-        </Card>
+            </div>
+          </Card>
 
-        {/* Lista quizów */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Dostępne quizy</h2>
-          <div className="space-y-4">
-            {quizzes.map((quiz) => (
-              <Link key={quiz.id} href={`/quizy/${quiz.id}`}>
-                <div className="p-4 rounded-lg border bg-card hover:bg-accent transition-colors duration-200 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Film className="h-6 w-6 text-primary" />
-                    <h3 className="font-semibold text-lg">{quiz.title}</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {quiz.description}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-primary">
-                      Poziom: {quiz.difficulty}
-                    </span>
-                    <span className="text-muted-foreground">
-                      Pytań: {quiz.questions.length}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Card>
+          {/* Lista quizów */}
+          <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+            <div className="p-6">
+              <h2 className="text-2xl font-semibold mb-4 text-white">Dostępne quizy</h2>
+              <div className="space-y-4">
+                {quizzes.map((quiz) => (
+                  <Link key={quiz.id} href={`/quizy/${quiz.id}`}>
+                    <div className="p-4 rounded-lg border border-white/10 bg-black/30 hover:bg-black/40 transition-colors duration-200 cursor-pointer">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Film className="h-6 w-6 text-red-500" />
+                        <h3 className="font-semibold text-lg text-white">{quiz.title}</h3>
+                      </div>
+                      <p className="text-sm text-zinc-400 mb-2">
+                        {quiz.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-red-500">
+                          Poziom: {quiz.difficulty}
+                        </span>
+                        <span className="text-zinc-400">
+                          Pytań: {quiz.questions.length}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   )
