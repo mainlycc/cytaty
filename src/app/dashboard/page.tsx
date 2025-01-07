@@ -2,17 +2,10 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
-import { LogOut, User, Edit } from "lucide-react"
+import { Edit } from "lucide-react"
 import { ClientProfileWrapper } from "@/app/components/profile-components"
 import Link from "next/link"
 import { DeleteMemeButton, DeleteQuizButton } from "@/app/components/delete-buttons"
-
-async function handleSignOut() {
-  "use server"
-  const supabase = createServerComponentClient({ cookies })
-  await supabase.auth.signOut()
-  redirect("/auth/login")
-}
 
 export default async function DashboardPage() {
   const supabase = createServerComponentClient({ cookies })
