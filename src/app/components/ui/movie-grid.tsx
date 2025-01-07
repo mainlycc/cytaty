@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react'
-import { TimeWindowSwitch } from './time-window-switch'
 import { tmdb } from '@/lib/tmdb'
 import type { Movie, TimeWindow } from '@/lib/tmdb'
 import { Card, CardContent } from './card'
@@ -10,11 +9,6 @@ import Image from 'next/image'
 
 interface Genre {
   id: number;
-  name: string;
-}
-
-interface SortOption {
-  id: string;
   name: string;
 }
 
