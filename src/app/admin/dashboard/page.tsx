@@ -6,7 +6,6 @@ import {
   Users, 
   ImageIcon, 
   BrainCircuit, 
-  Flag,
   MessageSquare 
 } from "lucide-react"
 
