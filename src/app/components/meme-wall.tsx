@@ -5,30 +5,56 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Share2, ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import { toast } from 'sonner'
+import { Input } from "./ui/input"
 
 const MEMES_PER_PAGE = 50
 const MAX_VISIBLE_PAGES = 5
 
+type Like = {
+  user_id: string;
+  meme_id: number;
+}
+
+type Comment = {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  users: {
+    username: string;
+    avatar: string | null;
+  } | null;
+}
+
 type Meme = {
-  id: number
-  created_at: string
-  user_id: string
-  image_url: string
-  top_text: string
-  bottom_text: string
-  likes: number
-  top_position: { x: number; y: number }
-  bottom_position: { x: number; y: number }
-  hashtags: string[]
-  user: {
-    username: string
-  }
+  id: number;
+  created_at: string;
+  user_id: string;
+  image_url: string;
+  top_text: string;
+  bottom_text: string;
+  likes: Like[];
+  comments: Comment[];
+  top_position: { x: number; y: number };
+  bottom_position: { x: number; y: number };
+  hashtags: string[];
+  users: {
+    username: string;
+    avatar: string | null;
+  } | null;
 }
 
 type SortPeriod = 'all' | 'day' | 'week' | 'month'
 
+type MemeWithLikes = Meme & {
+  user_has_liked?: boolean;
+  likes_count?: number;
+}
+
 export function MemeWall() {
-  const [memes, setMemes] = useState<Meme[]>([])
+  const [memes, setMemes] = useState<MemeWithLikes[]>([])
+  const [newComment, setNewComment] = useState("")
   const [sortPeriod, setSortPeriod] = useState<SortPeriod>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
@@ -47,9 +73,30 @@ export function MemeWall() {
 
   useEffect(() => {
     const fetchMemes = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      
       let query = supabase
         .from('memes')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          users!inner (
+            username,
+            avatar
+          ),
+          likes!left (
+            user_id
+          ),
+          comments!left (
+            id,
+            content,
+            created_at,
+            user_id,
+            users:user_id (
+              username,
+              avatar
+            )
+          )
+        `, { count: 'exact' })
 
       if (sortPeriod !== 'all') {
         const now = new Date()
@@ -82,7 +129,14 @@ export function MemeWall() {
         return
       }
 
-      setMemes(data || [])
+      const memesWithLikes = data?.map(meme => ({
+        ...meme,
+        user_has_liked: meme.likes?.some((like: Like) => like.user_id === session?.user?.id),
+        likes_count: meme.likes?.length || 0,
+        comments: meme.comments || []
+      })) || []
+
+      setMemes(memesWithLikes)
       setTotalCount(count || 0)
     }
 
@@ -112,23 +166,108 @@ export function MemeWall() {
 
   const handleLike = async (memeId: number) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        toast.error('Musisz być zalogowany, aby polubić mem')
+        return
+      }
+
       const meme = memes.find(m => m.id === memeId)
       if (!meme) return
 
-      const { error } = await supabase
-        .from('memes')
-        .update({ likes: (meme.likes || 0) + 1 })
-        .eq('id', memeId)
+      if (meme.user_has_liked) {
+        const { error: deleteLikeError } = await supabase
+          .from('likes')
+          .delete()
+          .eq('meme_id', memeId)
+          .eq('user_id', session.user.id)
+
+        if (deleteLikeError) throw deleteLikeError
+
+        setMemes(memes.map(m => 
+          m.id === memeId 
+            ? { 
+                ...m, 
+                likes_count: (m.likes_count || 0) - 1,
+                user_has_liked: false,
+                likes: m.likes.filter(like => like.user_id !== session.user.id)
+              }
+            : m
+        ))
+      } else {
+        const { error: insertLikeError } = await supabase
+          .from('likes')
+          .insert([{ 
+            meme_id: memeId, 
+            user_id: session.user.id 
+          }])
+
+        if (insertLikeError) throw insertLikeError
+
+        setMemes(memes.map(m => 
+          m.id === memeId 
+            ? { 
+                ...m, 
+                likes_count: (m.likes_count || 0) + 1,
+                user_has_liked: true,
+                likes: [...m.likes, { user_id: session.user.id, meme_id: memeId }]
+              }
+            : m
+        ))
+      }
+    } catch (error) {
+      console.error('Błąd podczas dodawania/usuwania polubienia:', error)
+      toast.error('Wystąpił błąd podczas aktualizacji polubienia')
+    }
+  }
+
+  const handleAddComment = async (memeId: number) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        toast.error('Musisz być zalogowany, aby dodać komentarz')
+        return
+      }
+
+      if (!newComment.trim()) {
+        toast.error('Komentarz nie może być pusty')
+        return
+      }
+
+      const { data: commentData, error } = await supabase
+        .from('comments')
+        .insert([{
+          content: newComment.trim(),
+          meme_id: memeId,
+          user_id: session.user.id
+        }])
+        .select(`
+          *,
+          users (
+            username,
+            avatar
+          )
+        `)
+        .single()
 
       if (error) throw error
 
-      setMemes(memes.map(m => 
-        m.id === memeId 
-          ? { ...m, likes: (m.likes || 0) + 1 }
-          : m
+      setMemes(memes.map(meme => 
+        meme.id === memeId 
+          ? {
+              ...meme,
+              comments: [...(meme.comments || []), commentData]
+            }
+          : meme
       ))
+
+      setNewComment("")
+      toast.success('Komentarz został dodany')
     } catch (error) {
-      console.error('Błąd podczas dodawania polubienia:', error)
+      console.error('Błąd podczas dodawania komentarza:', error)
+      toast.error('Wystąpił błąd podczas dodawania komentarza')
     }
   }
 
@@ -162,61 +301,72 @@ export function MemeWall() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
-      <div className="flex gap-2">
-        <Button
-          variant={sortPeriod === 'all' ? 'default' : 'outline'}
+      <div className="flex justify-center gap-2">
+        <button
           onClick={() => handleSortChange('all')}
-          className={`${
-            sortPeriod === 'all'
-              ? "bg-white text-zinc-950 hover:bg-white/90"
-              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
-          }`}
+          className={`
+            inline-flex items-center text-sm px-3 py-1 rounded-full transition-all
+            ${sortPeriod === 'all'
+              ? 'bg-white text-black shadow-lg shadow-white/20' 
+              : 'bg-black/30 text-white/80 hover:bg-black/40 hover:text-white border border-white/10'
+            }
+          `}
+          aria-label="Pokaż wszystkie memy"
         >
           Wszystkie
-        </Button>
-        <Button
-          variant={sortPeriod === 'day' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => handleSortChange('day')}
-          className={`${
-            sortPeriod === 'day'
-              ? "bg-white text-zinc-900 hover:bg-white/90"
-              : "bg-black/100 backdrop-blur-sm hover:bg-zinc-200"
-          }`}
+          className={`
+            inline-flex items-center text-sm px-3 py-1 rounded-full transition-all
+            ${sortPeriod === 'day'
+              ? 'bg-white text-black shadow-lg shadow-white/20' 
+              : 'bg-black/30 text-white/80 hover:bg-black/40 hover:text-white border border-white/10'
+            }
+          `}
+          aria-label="Pokaż memy z dzisiaj"
         >
           Dzisiaj
-        </Button>
-        <Button
-          variant={sortPeriod === 'week' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => handleSortChange('week')}
-          className={`${
-            sortPeriod === 'week'
-              ? "bg-white text-black hover:bg-white/90"
-              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
-          }`}
+          className={`
+            inline-flex items-center text-sm px-3 py-1 rounded-full transition-all
+            ${sortPeriod === 'week'
+              ? 'bg-white text-black shadow-lg shadow-white/20' 
+              : 'bg-black/30 text-white/80 hover:bg-black/40 hover:text-white border border-white/10'
+            }
+          `}
+          aria-label="Pokaż memy z tego tygodnia"
         >
           W tym tygodniu
-        </Button>
-        <Button
-          variant={sortPeriod === 'month' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => handleSortChange('month')}
-          className={`${
-            sortPeriod === 'month'
-              ? "bg-white text-black hover:bg-white/90"
-              : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
-          }`}
+          className={`
+            inline-flex items-center text-sm px-3 py-1 rounded-full transition-all
+            ${sortPeriod === 'month'
+              ? 'bg-white text-black shadow-lg shadow-white/20' 
+              : 'bg-black/30 text-white/80 hover:bg-black/40 hover:text-white border border-white/10'
+            }
+          `}
+          aria-label="Pokaż memy z tego miesiąca"
         >
           W tym miesiącu
-        </Button>
+        </button>
       </div>
       
       {memes.map((meme) => (
-        <Card key={meme.id} className="bg-zinc-900/50 backdrop-blur-sm border-zinc-800">
+        <Card 
+          key={meme.id} 
+          className="bg-black/50 backdrop-blur-sm border-zinc-800/80 hover:bg-black/60 transition-colors"
+        >
           <CardContent className="p-6">
             <div className="relative aspect-[4/3]">
               <img
                 src={meme.image_url}
                 alt="Mem"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain rounded-lg"
               />
               <div className="absolute inset-0">
                 {meme.top_text && (
@@ -248,21 +398,24 @@ export function MemeWall() {
             <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <span>Liczba polubień: {meme.likes || 0}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-white hover:text-red-500 hover:bg-zinc-800 p-2"
-                    onClick={() => handleLike(meme.id)}
-                    aria-label="Polub mema"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
+                  {meme.users?.avatar ? (
+                    <img 
+                      src={meme.users.avatar} 
+                      alt={`Avatar ${meme.users.username}`}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
+                      <span className="text-xs text-zinc-400">
+                        {meme.users?.username?.charAt(0).toUpperCase() || '?'}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-zinc-400">
+                    Autor: {meme.users?.username || 'Anonim'}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1 text-sm">
-                  <span className="text-zinc-400">
-                    Autor: {meme.user?.username || 'Anonim'}
-                  </span>
                   <span className="text-zinc-400">
                     Dodano: {formatDate(meme.created_at)}
                   </span>
@@ -272,7 +425,7 @@ export function MemeWall() {
                     {meme.hashtags.map((tag, index) => (
                       <span 
                         key={`${meme.id}-${index}`}
-                        className="text-sm bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full"
+                        className="text-sm bg-black/30 text-zinc-300 px-2 py-1 rounded-full border border-white/10"
                       >
                         #{tag}
                       </span>
@@ -280,15 +433,94 @@ export function MemeWall() {
                   </div>
                 )}
               </div>
-              <Button 
-                variant="secondary" 
-                size="sm"
-                className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80"
-                onClick={() => handleShare(meme)}
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Udostępnij
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleLike(meme.id)}
+                  className={`flex items-center gap-2 ${
+                    meme.user_has_liked 
+                      ? 'text-red-500 hover:text-red-400' 
+                      : 'text-zinc-400 hover:text-zinc-100'
+                  }`}
+                >
+                  <Heart 
+                    className={`w-4 h-4 ${meme.user_has_liked ? 'fill-current' : ''}`} 
+                  />
+                  <span>{meme.likes_count || 0}</span>
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  className="text-zinc-300 hover:text-white hover:bg-black/50 border border-white/10"
+                  onClick={() => handleShare(meme)}
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Udostępnij
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-zinc-800/80 pt-4">
+              <h3 className="text-zinc-400 text-sm mb-4">
+                Komentarze ({meme.comments?.length || 0})
+              </h3>
+              
+              <div className="space-y-4">
+                {meme.comments && meme.comments.length > 0 ? (
+                  meme.comments.map((comment: Comment) => (
+                    <div key={comment.id} className="flex gap-3">
+                      {comment.users?.avatar ? (
+                        <img 
+                          src={comment.users.avatar} 
+                          alt={`Avatar ${comment.users.username}`}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
+                          <span className="text-xs text-zinc-400">
+                            {comment.users?.username?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-300 text-sm font-medium">
+                            {comment.users?.username || 'Anonim'}
+                          </span>
+                          <span className="text-zinc-500 text-xs">
+                            {formatDate(comment.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-zinc-300 mt-1">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-zinc-500 text-sm">Brak komentarzy</p>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Input
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Dodaj komentarz..."
+                  className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleAddComment(meme.id)
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => handleAddComment(meme.id)}
+                  className="bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50"
+                >
+                  Dodaj
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -301,7 +533,7 @@ export function MemeWall() {
             size="sm"
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            className="bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+            className="bg-black/30 text-white hover:bg-black/40 border-white/10"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -320,7 +552,7 @@ export function MemeWall() {
                 className={`min-w-[40px] ${
                   currentPage === pageNum 
                     ? "bg-white text-black hover:bg-white/90" 
-                    : "bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+                    : "bg-black/30 text-white hover:bg-black/40 border-white/10"
                 }`}
               >
                 {pageNum}
@@ -333,7 +565,7 @@ export function MemeWall() {
             size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
-            className="bg-black/50 backdrop-blur-sm hover:bg-zinc-800"
+            className="bg-black/30 text-white hover:bg-black/40 border-white/10"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>

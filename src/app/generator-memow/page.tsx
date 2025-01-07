@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { MemeGenerator } from "@/app/components/meme-generator"
+import { Toaster } from "sonner"
 
 export default async function MemeGeneratorPage() {
   const supabase = createServerComponentClient({ cookies })
@@ -25,6 +26,7 @@ export default async function MemeGeneratorPage() {
           <MemeGenerator />
         </div>
       </main>
+      <Toaster richColors position="top-center" />
     </div>
   )
 } 

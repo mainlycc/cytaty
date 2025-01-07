@@ -138,20 +138,14 @@ export function MemeGenerator() {
       setTopPosition({ x: 0, y: 0 })
       setBottomPosition({ x: 0, y: 0 })
       
-      toast.success('Mem został pomyślnie zapisany!')
-
-    } catch (error) {
-      console.error('Szczegóły błędu:', {
-        error,
-        type: typeof error,
-        message: error instanceof Error ? error.message : 'Nieznany błąd'
+      toast.success('Mem został pomyślnie utworzony!', {
+        description: 'Możesz go zobaczyć na stronie głównej.',
+        duration: 5000,
       })
 
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        toast.error('Wystąpił nieznany błąd podczas zapisywania mema')
-      }
+    } catch (error) {
+      console.error('Szczegóły błędu:', error)
+      toast.error(error instanceof Error ? error.message : 'Wystąpił nieznany błąd podczas zapisywania mema')
     }
   }
 
