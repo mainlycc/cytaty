@@ -17,13 +17,11 @@ import {
 } from "@/app/components/ui/alert-dialog"
 
 export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
-  const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClientComponentClient()
 
-  const handleDelete = async () => {
+  const handleDeleteMeme = async () => {
     if (!confirm('Czy na pewno chcesz usunąć ten mem?')) return;
     
-    setIsDeleting(true)
     try {
       const { error } = await supabase
         .from('memes')
@@ -37,8 +35,6 @@ export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
     } catch (error) {
       console.error('Błąd podczas usuwania mema:', error)
       alert('Wystąpił błąd podczas usuwania mema')
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -63,7 +59,7 @@ export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
             Anuluj
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
+            onClick={handleDeleteMeme}
             className="bg-red-500 hover:bg-red-600 text-white border-0"
           >
             Usuń
@@ -75,11 +71,9 @@ export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
 }
 
 export function DeleteQuizButton({ quizId }: { quizId: string }) {
-  const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClientComponentClient()
 
-  const handleDelete = async () => {
-    setIsDeleting(true)
+  const handleDeleteQuiz = async () => {
     try {
       const { error } = await supabase
         .from('quizzes')
@@ -92,8 +86,6 @@ export function DeleteQuizButton({ quizId }: { quizId: string }) {
     } catch (error) {
       console.error('Błąd podczas usuwania quizu:', error)
       alert('Wystąpił błąd podczas usuwania quizu')
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -118,7 +110,7 @@ export function DeleteQuizButton({ quizId }: { quizId: string }) {
             Anuluj
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
+            onClick={handleDeleteQuiz}
             className="bg-red-500 hover:bg-red-600 text-white border-0"
           >
             Usuń

@@ -5,7 +5,6 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Share2, ChevronLeft, ChevronRight, Heart } from "lucide-react"
-import Link from 'next/link'
 
 const MEMES_PER_PAGE = 50
 const MAX_VISIBLE_PAGES = 5
@@ -27,10 +26,6 @@ type Meme = {
 }
 
 type SortPeriod = 'all' | 'day' | 'week' | 'month'
-
-interface MemeWallProps {
-  initialPeriod: SortPeriod
-}
 
 export function MemeWall() {
   const [memes, setMemes] = useState<Meme[]>([])
