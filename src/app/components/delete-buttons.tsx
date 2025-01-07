@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Button } from "./ui/button"
 import { Trash2 } from "lucide-react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
