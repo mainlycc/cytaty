@@ -281,9 +281,9 @@ export function MemeWall() {
                 )}
               </div>
               <Button 
-                variant="ghost" 
+                variant="secondary" 
                 size="sm"
-                className="text-white hover:text-white hover:bg-zinc-800"
+                className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80"
                 onClick={() => handleShare(meme)}
               >
                 <Share2 className="w-4 h-4 mr-2" />

@@ -5,6 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+interface Genre {
+  id: number;
+  name: string;
+}
+
 interface Movie {
   id: number;
   title: string;
@@ -15,13 +20,53 @@ interface TMDBResponse {
   results: Movie[];
 }
 
+interface GenreResponse {
+  genres: Genre[];
+}
+
 interface MovieListProps {
   initialPeriod: string;
+}
+
+interface SortOption {
+  id: string;
+  name: string;
 }
 
 export function MovieList({ initialPeriod }: MovieListProps) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [period, setPeriod] = useState(initialPeriod);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
+  const [sortBy, setSortBy] = useState<string>('popularity.desc');
+
+  const sortOptions: SortOption[] = [
+    { id: 'popularity.desc', name: 'Najpopularniejsze' },
+    { id: 'vote_average.desc', name: 'Najwyżej oceniane' },
+    { id: 'release_date.desc', name: 'Najnowsze' },
+    { id: 'revenue.desc', name: 'Najbardziej dochodowe' },
+  ];
+
+  useEffect(() => {
+    async function fetchGenres() {
+      try {
+        const { data } = await axios.get<GenreResponse>(
+          'https://api.themoviedb.org/3/genre/movie/list',
+          {
+            params: {
+              api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY,
+              language: 'pl-PL',
+            },
+          }
+        );
+        setGenres(data.genres);
+      } catch (error) {
+        console.error('Błąd podczas pobierania gatunków:', error);
+      }
+    }
+
+    fetchGenres();
+  }, []);
 
   useEffect(() => {
     async function fetchMovies() {
@@ -35,17 +80,22 @@ export function MovieList({ initialPeriod }: MovieListProps) {
             endpoint = 'trending/movie/week';
             break;
           default:
-            endpoint = 'movie/popular';
+            endpoint = 'discover/movie';
+        }
+
+        const params: Record<string, string | number | undefined> = {
+          api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY as string,
+          language: 'pl-PL',
+          sort_by: sortBy,
+        };
+
+        if (selectedGenres.length > 0) {
+          params.with_genres = selectedGenres.join(',');
         }
 
         const { data } = await axios.get<TMDBResponse>(
           `https://api.themoviedb.org/3/${endpoint}`,
-          {
-            params: {
-              api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY,
-              language: 'pl-PL',
-            },
-          }
+          { params }
         );
         
         setMovies(data.results);
@@ -56,7 +106,21 @@ export function MovieList({ initialPeriod }: MovieListProps) {
     }
 
     fetchMovies();
-  }, [period]);
+  }, [period, selectedGenres, sortBy]);
+
+  const handleGenreToggle = (genreId: number) => {
+    setSelectedGenres(prev => {
+      if (prev.includes(genreId)) {
+        return prev.filter(id => id !== genreId);
+      }
+      return [...prev, genreId];
+    });
+    setPeriod('popular');
+  };
+
+  const handleSortChange = (sortValue: string) => {
+    setSortBy(sortValue);
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -69,6 +133,53 @@ export function MovieList({ initialPeriod }: MovieListProps) {
         <main className="row-start-2 w-full">
           <div className="flex flex-col items-center mb-10">
             <h1 className="text-3xl font-bold text-center mb-6">Najpopularniejsze filmy</h1>
+            
+            <div className="flex flex-wrap justify-center gap-4 mb-6">
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="px-4 py-2 rounded-lg bg-black/50 text-white border border-white/20 focus:outline-none focus:border-white/40"
+                aria-label="Sortuj filmy"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4 mb-6">
+              <button
+                onClick={() => setSelectedGenres([])}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  selectedGenres.length === 0
+                    ? 'bg-white text-black' 
+                    : 'bg-black/50 text-white border border-white/20'
+                }`}
+                aria-label="Pokaż wszystkie gatunki"
+              >
+                Wszystkie
+              </button>
+              {genres.map((genre) => (
+                <button
+                  key={genre.id}
+                  onClick={() => handleGenreToggle(genre.id)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    selectedGenres.includes(genre.id)
+                      ? 'bg-white text-black' 
+                      : 'bg-black/50 text-white border border-white/20'
+                  }`}
+                  aria-label={`${selectedGenres.includes(genre.id) ? 'Usuń' : 'Dodaj'} gatunek ${genre.name}`}
+                >
+                  {genre.name}
+                  {selectedGenres.includes(genre.id) && (
+                    <span className="ml-2 text-xs">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
             <div className="flex gap-4">
               <Link 
                 href="/filmy?period=popular" 

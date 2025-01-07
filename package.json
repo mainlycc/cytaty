@@ -26,6 +26,7 @@
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "emblor": "^1.4.7",
     "lucide-react": "^0.469.0",
     "next": "15.1.2",
     "react": "^19.0.0",

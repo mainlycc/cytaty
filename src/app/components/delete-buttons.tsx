@@ -19,8 +19,6 @@ export const DeleteMemeButton = ({ memeId }: { memeId: string }) => {
   const supabase = createClientComponentClient()
 
   const handleDeleteMeme = async () => {
-    if (!confirm('Czy na pewno chcesz usunąć ten mem?')) return;
-    
     try {
       const { error } = await supabase
         .from('memes')
