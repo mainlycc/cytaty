@@ -74,26 +74,6 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-black via-black to-red-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
       
-      <header className="border-b border-zinc-800/80 relative">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-zinc-100">Dashboard</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-zinc-400">
-                <User className="h-4 w-4" />
-                <span className="text-sm">{session.user.email}</span>
-              </div>
-              <form action={handleSignOut}>
-                <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-100">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Wyloguj
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-8 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-8">

@@ -7,6 +7,7 @@ import { Button } from "./ui/button"
 import { Share2, ChevronLeft, ChevronRight, Heart } from "lucide-react"
 import { toast } from 'sonner'
 import { Input } from "./ui/input"
+import Image from "next/image"
 
 const MEMES_PER_PAGE = 50
 const MAX_VISIBLE_PAGES = 5
@@ -362,38 +363,38 @@ export function MemeWall() {
           className="bg-black/50 backdrop-blur-sm border-zinc-800/80 hover:bg-black/60 transition-colors"
         >
           <CardContent className="p-6">
-            <div className="relative aspect-[4/3]">
-              <img
+            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <Image
                 src={meme.image_url}
                 alt="Mem"
-                className="w-full h-full object-contain rounded-lg"
+                className="w-full h-full object-contain"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
-              <div className="absolute inset-0">
-                {meme.top_text && (
-                  <h2 
-                    className="text-2xl md:text-3xl font-bold uppercase text-center absolute text-white [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)]"
-                    style={{
-                      left: meme.top_position?.x || '50%',
-                      top: meme.top_position?.y || '10%',
-                      transform: meme.top_position ? 'none' : 'translateX(-50%)'
-                    }}
-                  >
-                    {meme.top_text}
-                  </h2>
-                )}
-                {meme.bottom_text && (
-                  <h2 
-                    className="text-2xl md:text-3xl font-bold uppercase text-center absolute text-white [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)]"
-                    style={{
-                      left: meme.bottom_position?.x || '50%',
-                      bottom: meme.bottom_position?.y || '10%',
-                      transform: meme.bottom_position ? 'none' : 'translateX(-50%)'
-                    }}
-                  >
-                    {meme.bottom_text}
-                  </h2>
-                )}
-              </div>
+              {meme.top_text && (
+                <div 
+                  className="absolute text-2xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `${meme.top_position?.x || 0}%`,
+                    top: `${meme.top_position?.y || 0}%`,
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                  }}
+                >
+                  {meme.top_text}
+                </div>
+              )}
+              {meme.bottom_text && (
+                <div 
+                  className="absolute text-2xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `${meme.bottom_position?.x || 0}%`,
+                    top: `${meme.bottom_position?.y || 0}%`,
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                  }}
+                >
+                  {meme.bottom_text}
+                </div>
+              )}
             </div>
             <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">

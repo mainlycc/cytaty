@@ -33,6 +33,8 @@ export function MemeGenerator() {
   const [currentTag, setCurrentTag] = useState<string>("")
   const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [topPercentPosition, setTopPercentPosition] = useState<{ x: number; y: number }>({ x: 50, y: 20 });
+  const [bottomPercentPosition, setBottomPercentPosition] = useState<{ x: number; y: number }>({ x: 50, y: 80 });
   const supabase = createClientComponentClient()
   const topTextDraggableRef = useRef<HTMLElement>(null)
   const bottomTextDraggableRef = useRef<HTMLElement>(null)
@@ -116,8 +118,8 @@ export function MemeGenerator() {
         created_at: new Date().toISOString(),
         hashtags: tags.length > 0 ? tags : ['mem'],
         likes: 0,
-        top_position: topPosition,
-        bottom_position: bottomPosition
+        top_position: topPercentPosition,
+        bottom_position: bottomPercentPosition
       }
 
       const { error: insertError } = await supabase
@@ -150,16 +152,25 @@ export function MemeGenerator() {
   }
 
   const handleDragStop = (position: { x: number; y: number }, isTop: boolean) => {
+    const container = document.querySelector('.meme-preview-container');
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const percentX = (position.x / rect.width) * 100;
+    const percentY = (position.y / rect.height) * 100;
+
     if (isTop) {
-      setTopPosition(position)
+      setTopPosition({ x: position.x, y: position.y });
+      setTopPercentPosition({ x: percentX, y: percentY });
     } else {
-      setBottomPosition(position)
+      setBottomPosition({ x: position.x, y: position.y });
+      setBottomPercentPosition({ x: percentX, y: percentY });
     }
-  }
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
+    <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-8">
+      <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80 h-fit">
         <CardContent className="p-6 space-y-6">
           <div className="grid gap-4">
             <Label htmlFor="image" className="text-zinc-400">
@@ -244,14 +255,15 @@ export function MemeGenerator() {
 
       <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
         <CardContent className="p-6">
-          <div className="aspect-video bg-zinc-900/50 rounded-lg overflow-hidden flex items-center justify-center">
+          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
             {previewUrl ? (
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full meme-preview-container">
                 <Image
                   src={previewUrl}
                   alt="Preview"
                   className="w-full h-full object-contain"
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
                 <div className="absolute inset-0">
                   {topText && (
@@ -270,7 +282,10 @@ export function MemeGenerator() {
                             (topTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
                           }
                         }}
-                        className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
+                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                        }}
                       >
                         {topText}
                       </div>
@@ -292,7 +307,10 @@ export function MemeGenerator() {
                             (bottomTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
                           }
                         }}
-                        className="text-2xl font-bold text-white uppercase text-stroke cursor-move inline-block"
+                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                        }}
                       >
                         {bottomText}
                       </div>
