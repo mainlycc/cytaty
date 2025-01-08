@@ -11,19 +11,6 @@ import { toast } from "sonner"
 import Image from 'next/image';
 import type { DraggableData, DraggableEvent } from 'react-draggable';
 
-type MemeData = {
-  id?: string
-  user_id: string
-  image_url: string
-  top_text: string | null
-  bottom_text: string | null
-  created_at: string
-  hashtags: string[]
-  likes: number
-  top_position: { x: number; y: number }
-  bottom_position: { x: number; y: number }
-}
-
 export function MemeGenerator() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [topText, setTopText] = useState("")
@@ -33,8 +20,6 @@ export function MemeGenerator() {
   const [currentTag, setCurrentTag] = useState<string>("")
   const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const [topPercentPosition, setTopPercentPosition] = useState<{ x: number; y: number }>({ x: 50, y: 20 });
-  const [bottomPercentPosition, setBottomPercentPosition] = useState<{ x: number; y: number }>({ x: 50, y: 80 });
   const supabase = createClientComponentClient()
   const topTextDraggableRef = useRef<HTMLElement>(null)
   const bottomTextDraggableRef = useRef<HTMLElement>(null)
@@ -150,16 +135,10 @@ export function MemeGenerator() {
     const container = document.querySelector('.meme-preview-container');
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    const percentX = (position.x / rect.width) * 100;
-    const percentY = (position.y / rect.height) * 100;
-
     if (isTop) {
       setTopPosition({ x: position.x, y: position.y });
-      setTopPercentPosition({ x: percentX, y: percentY });
     } else {
       setBottomPosition({ x: position.x, y: position.y });
-      setBottomPercentPosition({ x: percentX, y: percentY });
     }
   };
 
