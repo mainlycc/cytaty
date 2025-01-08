@@ -40,6 +40,7 @@ export function MemeGenerator() {
   const bottomTextDraggableRef = useRef<HTMLElement>(null)
   const topTextRef = useRef<HTMLDivElement>(null)
   const bottomTextRef = useRef<HTMLDivElement>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -64,7 +65,10 @@ export function MemeGenerator() {
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -124,7 +128,15 @@ export function MemeGenerator() {
 
       const { error: insertError } = await supabase
         .from('memes')
-        .insert([memeData])
+        .insert([
+          {
+            user_id: session.user.id,
+            image_url: urlData.publicUrl,
+            top_text: topText || null,
+            bottom_text: bottomText || null,
+            status: 'pending'
+          }
+        ])
 
       if (insertError) {
         console.error('Błąd podczas zapisywania do bazy:', insertError)
@@ -140,14 +152,13 @@ export function MemeGenerator() {
       setTopPosition({ x: 0, y: 0 })
       setBottomPosition({ x: 0, y: 0 })
       
-      toast.success('Mem został pomyślnie utworzony!', {
-        description: 'Możesz go zobaczyć na stronie głównej.',
-        duration: 5000,
-      })
+      toast.success('Mem został wysłany do moderacji')
 
     } catch (error) {
-      console.error('Szczegóły błędu:', error)
-      toast.error(error instanceof Error ? error.message : 'Wystąpił nieznany błąd podczas zapisywania mema')
+      console.error('Błąd:', error)
+      toast.error('Wystąpił błąd podczas zapisywania mema')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -244,7 +255,7 @@ export function MemeGenerator() {
           </div>
 
           <Button 
-            onClick={handleSave}
+            onClick={handleSubmit}
             disabled={!selectedImage}
             className="w-full bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >

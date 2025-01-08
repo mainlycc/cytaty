@@ -91,15 +91,6 @@ export default function Hero() {
               </div>
             </div>
           </div>
-
-          <div className="mt-20 text-center">
-            <h2 className="text-zinc-500 text-sm font-medium mb-4">FEATURED IN</h2>
-            <div className="flex justify-center gap-8 opacity-50">
-              <div className="w-24 h-8 bg-zinc-800 rounded" />
-              <div className="w-24 h-8 bg-zinc-800 rounded" />
-              <div className="w-24 h-8 bg-zinc-800 rounded" />
-            </div>
-          </div>
         </div>
       </section>
     </>

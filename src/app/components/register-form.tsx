@@ -72,10 +72,10 @@ export function RegisterForm({
  }
   return (
    <div className={cn("flex flex-col gap-6", className)} {...props}>
-     <Card>
+     <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
        <CardHeader className="text-center">
-         <CardTitle className="text-xl">Stwórz konto</CardTitle>
-         <CardDescription>
+         <CardTitle className="text-xl text-zinc-100">Stwórz konto</CardTitle>
+         <CardDescription className="text-zinc-400">
            Zarejestruj się przez Apple lub Google
          </CardDescription>
        </CardHeader>
@@ -85,7 +85,7 @@ export function RegisterForm({
              <div className="flex flex-col gap-4">
                <Button 
                  variant="outline" 
-                 className="w-full" 
+                 className="w-full bg-zinc-900/50 border-zinc-800/80 text-zinc-100 hover:bg-zinc-900/80" 
                  onClick={() => handleOAuthSignUp('apple')}
                  type="button"
                >
@@ -99,7 +99,7 @@ export function RegisterForm({
                </Button>
                <Button 
                  variant="outline" 
-                 className="w-full"
+                 className="w-full bg-zinc-900/50 border-zinc-800/80 text-zinc-100 hover:bg-zinc-900/80"
                  onClick={() => handleOAuthSignUp('google')}
                  type="button"
                >
@@ -112,14 +112,14 @@ export function RegisterForm({
                  Zarejestruj przez Google
                </Button>
              </div>
-             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-               <span className="relative z-10 bg-background px-2 text-muted-foreground">
+             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-zinc-800/80">
+               <span className="relative z-10 bg-black/50 px-2 text-zinc-400">
                  Lub kontynuuj przez email
                </span>
              </div>
              <div className="grid gap-6">
                <div className="grid gap-2">
-                 <Label htmlFor="email">Email</Label>
+                 <Label htmlFor="email" className="text-zinc-400">Email</Label>
                  <Input
                    id="email"
                    type="email"
@@ -127,10 +127,11 @@ export function RegisterForm({
                    required
                    value={email}
                    onChange={(e) => setEmail(e.target.value)}
+                   className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100 placeholder:text-zinc-500"
                  />
                </div>
                <div className="grid gap-2">
-                 <Label htmlFor="password">Hasło</Label>
+                 <Label htmlFor="password" className="text-zinc-400">Hasło</Label>
                  <div className="relative">
                    <Input
                      id="password"
@@ -138,30 +139,31 @@ export function RegisterForm({
                      required
                      value={password}
                      onChange={(e) => setPassword(e.target.value)}
+                     className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
                      disabled={loading}
                    />
                    <Button
                      type="button"
                      variant="ghost"
                      size="sm"
-                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-zinc-400 hover:text-zinc-100"
                      onClick={() => setShowPassword(!showPassword)}
                    >
                      {showPassword ? (
-                       <EyeOff className="h-4 w-4 text-zinc-400" />
+                       <EyeOff className="h-4 w-4" />
                      ) : (
-                       <Eye className="h-4 w-4 text-zinc-400" />
+                       <Eye className="h-4 w-4" />
                      )}
                    </Button>
                  </div>
                </div>
-               <Button type="submit" className="w-full" disabled={loading}>
+               <Button type="submit" className="w-full bg-red-500/80 hover:bg-red-500 text-white border-none" disabled={loading}>
                  {loading ? "Rejestracja..." : "Zarejestruj się"}
                </Button>
              </div>
-             <div className="text-center text-sm">
+             <div className="text-center text-sm text-zinc-400">
                Masz już konto?{" "}
-               <Link href="/auth/login" className="underline underline-offset-4">
+               <Link href="/auth/login" className="text-red-400 hover:text-red-300 underline underline-offset-4">
                  Zaloguj się
                </Link>
              </div>
@@ -169,10 +171,10 @@ export function RegisterForm({
          </form>
        </CardContent>
      </Card>
-     <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
+     <div className="text-balance text-center text-xs text-zinc-500 [&_a]:text-red-400 [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-red-300">
        Klikając zarejestruj się, akceptujesz nasz{" "}
-       <Link href="#">Regulamin</Link> oraz{" "}
-       <Link href="#">Politykę Prywatności</Link>.
+       <Link href="/regulamin">Regulamin</Link> oraz{" "}
+       <Link href="/polityka-prywatnosci">Politykę Prywatności</Link>.
      </div>
    </div>
  )

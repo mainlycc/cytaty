@@ -98,6 +98,7 @@ export function MemeWall() {
             )
           )
         `, { count: 'exact' })
+        .eq('status', 'approved')
 
       if (sortPeriod !== 'all') {
         const now = new Date()
