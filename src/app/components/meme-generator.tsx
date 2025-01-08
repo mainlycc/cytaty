@@ -40,7 +40,6 @@ export function MemeGenerator() {
   const bottomTextDraggableRef = useRef<HTMLElement>(null)
   const topTextRef = useRef<HTMLDivElement>(null)
   const bottomTextRef = useRef<HTMLDivElement>(null)
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -67,7 +66,6 @@ export function MemeGenerator() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -114,18 +112,6 @@ export function MemeGenerator() {
         throw new Error('Nie udało się uzyskać publicznego URL')
       }
 
-      const memeData: MemeData = {
-        user_id: session.user.id,
-        image_url: urlData.publicUrl,
-        top_text: topText || null,
-        bottom_text: bottomText || null,
-        created_at: new Date().toISOString(),
-        hashtags: tags.length > 0 ? tags : ['mem'],
-        likes: 0,
-        top_position: topPercentPosition,
-        bottom_position: bottomPercentPosition
-      }
-
       const { error: insertError } = await supabase
         .from('memes')
         .insert([
@@ -157,8 +143,6 @@ export function MemeGenerator() {
     } catch (error) {
       console.error('Błąd:', error)
       toast.error('Wystąpił błąd podczas zapisywania mema')
-    } finally {
-      setIsLoading(false)
     }
   }
 
