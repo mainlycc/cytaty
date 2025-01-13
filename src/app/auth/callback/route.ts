@@ -8,8 +8,39 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
+    
+    try {
+      const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) throw error
+
+      if (user?.user_metadata?.username) {
+        const { error: userError } = await supabase
+          .from('users')
+          .upsert({
+            id: user.id,
+            username: user.user_metadata.username,
+            email: user.email,
+            updated_at: new Date().toISOString(),
+          })
+        
+        if (userError) {
+          console.error('Błąd podczas aktualizacji nazwy użytkownika:', userError)
+        }
+      }
+
+      // Przekieruj do strony sukcesu z parametrem email
+      return NextResponse.redirect(
+        `${requestUrl.origin}/auth/verification-success?email=${encodeURIComponent(user?.email || '')}`
+      )
+    } catch (error) {
+      console.error('Błąd podczas weryfikacji:', error)
+      return NextResponse.redirect(
+        `${requestUrl.origin}/auth/verification-error`
+      )
+    }
   }
 
-  return NextResponse.redirect(new URL("/dashboard", request.url))
+  // Przekieruj do strony głównej jeśli nie ma kodu
+  return NextResponse.redirect(requestUrl.origin)
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
 import { Button } from "./ui/button"
@@ -176,6 +176,34 @@ export default function ProfileForm({ defaultValues, onSuccess }: ProfileFormPro
         const { name, value } = e.target
         setFormData((prev) => ({ ...prev, [name]: value }))
     }
+
+    const fetchUserProfile = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('username, name, bio, website, twitter, instagram, avatar')
+                    .eq('id', user.id)
+                    .single()
+
+                if (error) throw error
+                
+                if (userData) {
+                    setFormData(prevData => ({
+                        ...prevData,
+                        ...userData
+                    }))
+                }
+            }
+        } catch (error) {
+            console.error('Błąd podczas pobierania danych profilu:', error)
+        }
+    }
+
+    useEffect(() => {
+        fetchUserProfile()
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <form onSubmit={handleSubmit} className="w-full max-w-2xl space-y-8 p-6 bg-black/50 backdrop-blur-sm rounded-xl border border-zinc-800/80">
