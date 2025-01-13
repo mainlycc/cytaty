@@ -80,7 +80,7 @@ export function MemeWall() {
         .from('memes')
         .select(`
           *,
-          users!inner (
+          users!left (
             username,
             avatar
           ),

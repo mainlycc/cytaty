@@ -34,6 +34,7 @@ interface User {
   id: string;
   name: string | null;
   email: string | null;
+  username: string | null;
 }
 
 interface UserMap {
@@ -73,7 +74,7 @@ export default function HomePage() {
         const userIds = [...new Set(results.map(r => r.user_id))]
         const { data: users, error: usersError } = await supabase
           .from('users')
-          .select('id, name, email')
+          .select('id, name, email, username')
           .in('id', userIds)
 
         if (usersError) throw usersError
@@ -94,7 +95,7 @@ export default function HomePage() {
           if (!userScores[userId]) {
             userScores[userId] = {
               user_id: userId,
-              name: userData?.name || userData?.email || 'Anonim',
+              name: userData?.username || userData?.name || 'Anonim',
               total_points: 0,
               games_played: 0
             }
