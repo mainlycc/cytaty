@@ -276,7 +276,7 @@ export function RegisterForm({
                  </div>
                  <p className="text-xs text-zinc-500">
                    Hasło musi zawierać minimum 8 znaków, w tym przynajmniej: 1 wielką literę, 
-                   1 małą literę, 1 cyfrę i 1 znak specjalny (!@#$%^&*(),.?":{}|&lt;&gt;)
+                   1 małą literę, 1 cyfrę i 1 znak specjalny (!@#$%^&*(),.?&quot;:{}|&lt;&gt;)
                  </p>
                </div>
                <div className="grid gap-2">
