@@ -59,7 +59,7 @@ const DailyQuote = () => {
     <div className="flex flex-col items-center justify-center h-full p-6 text-center">
       <Quote className="w-8 h-8 text-blue-500 mb-4" />
       <p className="text-xl md:text-2xl font-serif italic text-white mb-4">
-        "{quote.quote}"
+        &ldquo;{quote.quote}&rdquo;
       </p>
       <p className="text-sm text-zinc-400">
         {quote.movie} ({quote.year})
