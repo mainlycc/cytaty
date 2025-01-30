@@ -48,7 +48,7 @@ export const fetchUpcomingMovies = async () => {
   }
 
   const data = await response.json()
-  return data.results.slice(0, 3).map((movie: any) => ({
+  return data.results.slice(0, 3).map((movie: Movie) => ({
     id: movie.id,
     title: movie.title,
     poster_url: `${TMDB_IMAGE_BASE_URL}/${tmdb.posterSizes.medium}${movie.poster_path}`,
