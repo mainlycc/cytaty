@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/app/components/ui/button"
 import { QuoteCard } from "@/app/components/ui/quote-card"
+import BentoGrid from "./bento-grid"
 
 import Link from "next/link"
 
@@ -57,8 +58,7 @@ export default function Hero() {
 
   return (
     <>
-    
-      <section className="min-h-screen relative overflow-hidden bg-gradient-to-b from-black via-black to-red-950 pt-16">
+      <section className="relative overflow-hidden pt-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
         <div className="container mx-auto px-4 py-20 relative">
           <div className="text-center space-y-10 mb-16">
@@ -93,6 +93,11 @@ export default function Hero() {
           </div>
         </div>
       </section>
+      
+      <div className="relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
+        <BentoGrid />
+      </div>
     </>
   )
 }

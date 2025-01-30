@@ -33,3 +33,26 @@ export type Movie = {
   genres: { id: number; name: string }[]
 }
 
+export const fetchUpcomingMovies = async () => {
+  const response = await fetch(
+    `${TMDB_BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=pl-PL&region=PL`,
+    {
+      headers: {
+        'Accept': 'application/json'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming movies')
+  }
+
+  const data = await response.json()
+  return data.results.slice(0, 3).map((movie: any) => ({
+    id: movie.id,
+    title: movie.title,
+    poster_url: `${TMDB_IMAGE_BASE_URL}/${tmdb.posterSizes.medium}${movie.poster_path}`,
+    premiere_date: movie.release_date
+  }))
+}
+
