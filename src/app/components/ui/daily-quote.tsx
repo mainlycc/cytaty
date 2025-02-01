@@ -17,10 +17,7 @@ const DailyQuote = () => {
 
   useEffect(() => {
     const getDailyQuote = async () => {
-      // Pobierz datę jako string YYYY-MM-DD
       const today = new Date().toISOString().split('T')[0]
-      
-      // Sprawdź czy mamy już zapisany cytat na dziś w localStorage
       const savedQuote = localStorage.getItem(`dailyQuote_${today}`)
       
       if (savedQuote) {
@@ -28,7 +25,6 @@ const DailyQuote = () => {
         return
       }
 
-      // Jeśli nie ma cytatu na dziś, pobierz wszystkie cytaty
       const { data: quotes, error } = await supabase
         .from('quotes')
         .select('id, quote, movie, year')
@@ -39,12 +35,10 @@ const DailyQuote = () => {
       }
 
       if (quotes && quotes.length > 0) {
-        // Użyj daty jako seed dla pseudolosowego wyboru
         const seed = parseInt(today.replace(/-/g, ''))
         const randomIndex = seed % quotes.length
         const dailyQuote = quotes[randomIndex]
 
-        // Zapisz wybrany cytat w localStorage
         localStorage.setItem(`dailyQuote_${today}`, JSON.stringify(dailyQuote))
         setQuote(dailyQuote)
       }
@@ -56,14 +50,18 @@ const DailyQuote = () => {
   if (!quote) return null
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-      <Quote className="w-8 h-8 text-blue-500 mb-4" />
-      <p className="text-xl md:text-2xl font-serif italic text-white mb-4">
-        &ldquo;{quote.quote}&rdquo;
-      </p>
-      <p className="text-sm text-zinc-400">
-        {quote.movie} ({quote.year})
-      </p>
+    <div className="relative h-[400px] w-full flex items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 py-8">
+        <div className="bg-black/40 rounded-xl p-6 w-full max-w-2xl backdrop-blur-sm">
+          <Quote className="w-8 h-8 text-blue-500 mx-auto mb-4" />
+          <p className="text-xl md:text-2xl font-serif italic text-white mb-4 leading-relaxed">
+            &ldquo;{quote.quote}&rdquo;
+          </p>
+          <p className="text-sm text-zinc-300">
+            {quote.movie} ({quote.year})
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
