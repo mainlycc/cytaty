@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/app/components/ui/button"
 import { QuoteCard } from "@/app/components/ui/quote-card"
+import { Badge } from "@/app/components/ui/badge"
 import BentoGrid from "./bento-grid"
 
 import Link from "next/link"
@@ -62,11 +63,19 @@ export default function Hero() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.1),transparent)] pointer-events-none" />
         <div className="container mx-auto px-4 py-20 relative">
           <div className="text-center space-y-10 mb-16">
+            <div className="flex justify-center mb-6">
+              <Badge 
+                variant="custom" 
+                className="px-4 py-1.5 text-xs font-medium bg-white/5 text-white/90 border-white/10"
+              >
+                + Dołącz do 70 000 pasjonatów kina
+              </Badge>
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-white to-red-500 bg-clip-text text-transparent">
-              Cytaty z filmów
+              Filmowe słowa, które żyją dłużej
             </h1>
             <p className="text-zinc-400 max-w-2xl mx-auto text-lg mb-16">
-              Twoje miejsce wśród kinomaniaków! Dodawaj memy, cytuj kultowe kwestie i rywalizuj z innymi fanami filmów w emocjonujących quizach. Pokaż, kto naprawdę zna się na kinie!
+              Dołącz do filmowej społeczności! Twórz memy, dziel się cytatami i sprawdzaj swoją wiedzę w quizach. Odkryj magię kina razem z nami!
             </p>
             <Link href="/auth/register">
               <Button 

@@ -23,14 +23,25 @@ export const tmdb = {
   }
 }
 
-export type Movie = {
-  id: number
-  title: string
-  poster_path: string
-  release_date: string
-  vote_average: number
-  overview: string
-  genres: { id: number; name: string }[]
+export interface Genre {
+  id: number;
+  name: string;
+}
+
+export interface ProductionCountry {
+  iso_3166_1: string;
+  name: string;
+}
+
+export interface Movie {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+  overview: string;
+  genres: Genre[];
+  production_countries: ProductionCountry[];
 }
 
 export const fetchUpcomingMovies = async () => {
