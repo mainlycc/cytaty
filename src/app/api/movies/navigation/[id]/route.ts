@@ -25,9 +25,15 @@ interface TMDBMovie {
   vote_count: number;
 }
 
+type Context = {
+  params: {
+    id: string;
+  };
+};
+
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: Context
 ) {
   try {
     // Pobierz listę filmów z tym samym sortowaniem jak na stronie głównej
@@ -43,7 +49,7 @@ export async function GET(
     const movies = data.results;
     
     // Znajdź indeks obecnego filmu
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === context.params.id);
     
     // Określ ID poprzedniego i następnego filmu
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
