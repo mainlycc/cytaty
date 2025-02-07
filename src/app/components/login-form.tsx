@@ -46,28 +46,11 @@ export function LoginForm({
 
       toast.success("Zalogowano pomyślnie!")
       router.refresh()
-      router.push("/dashboard") // lub inna ścieżka po zalogowaniu
+      router.push("/dashboard")
     } catch {
       toast.error("Wystąpił błąd podczas logowania")
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleOAuthLogin = async (provider: 'google' | 'apple') => {
-    try {
-      const { error: _error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-      
-      if (_error) {
-        toast.error(_error.message)
-      }
-    } catch {
-      toast.error("Wystąpił błąd podczas logowania")
     }
   }
 
