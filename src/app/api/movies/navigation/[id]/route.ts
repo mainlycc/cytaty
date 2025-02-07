@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { tmdb } from '@/lib/tmdb';
 
 interface TMDBResponse {
@@ -25,16 +25,9 @@ interface TMDBMovie {
   vote_count: number;
 }
 
-type RouteParams = {
-  params: {
-    id: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
 export async function GET(
-  request: Request,
-  routeParams: RouteParams
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     // Pobierz listę filmów z tym samym sortowaniem jak na stronie głównej
@@ -50,7 +43,7 @@ export async function GET(
     const movies = data.results;
     
     // Znajdź indeks obecnego filmu
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === routeParams.params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
     
     // Określ ID poprzedniego i następnego filmu
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
