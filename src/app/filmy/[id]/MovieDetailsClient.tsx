@@ -70,6 +70,7 @@ export default function MovieDetailsClient() {
   const [navigationIds, setNavigationIds] = useState<NavigationIds>({ previousId: null, nextId: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -79,14 +80,15 @@ export default function MovieDetailsClient() {
       setError(null);
 
       try {
-        const [movieResponse, creditsResponse, providersResponse, navigationResponse] = await Promise.all([
+        const [movieResponse, creditsResponse, providersResponse, navigationResponse, videosResponse] = await Promise.all([
           fetch(`${tmdb.baseUrl}/movie/${id}?api_key=${tmdb.apiKey}&language=pl-PL`),
           fetch(`${tmdb.baseUrl}/movie/${id}/credits?api_key=${tmdb.apiKey}&language=pl-PL`),
           fetch(`${tmdb.baseUrl}/movie/${id}/watch/providers?api_key=${tmdb.apiKey}`),
-          fetch(`/api/movies/navigation/${id}`) // Endpoint który musisz stworzyć do pobierania ID sąsiednich filmów
+          fetch(`/api/movies/navigation/${id}`),
+          fetch(`${tmdb.baseUrl}/movie/${id}/videos?api_key=${tmdb.apiKey}&language=pl-PL`)
         ]);
 
-        if (!movieResponse.ok || !creditsResponse.ok || !providersResponse.ok || !navigationResponse.ok) {
+        if (!movieResponse.ok || !creditsResponse.ok || !providersResponse.ok || !navigationResponse.ok || !videosResponse.ok) {
           throw new Error('Nie udało się pobrać szczegółów filmu');
         }
 
@@ -94,11 +96,19 @@ export default function MovieDetailsClient() {
         const creditsData = await creditsResponse.json();
         const providersData = await providersResponse.json();
         const navigationData = await navigationResponse.json();
+        const videosData = await videosResponse.json();
 
+        // Znajdź oficjalny zwiastun
+        const trailer = videosData.results?.find(
+          (video: { type: string; official: boolean; site: string }) =>
+            video.type === 'Trailer' && video.official && video.site === 'YouTube'
+        );
+
+        setTrailerKey(trailer?.key || null);
         setMovie(movieData);
-        setCast(creditsData.cast.slice(0, 5)); // Pobierz pierwszych 5 członków obsady
+        setCast(creditsData.cast.slice(0, 5));
         setDirector(creditsData.crew.find((member: CrewMember) => member.job === 'Director'));
-        setWatchProviders(providersData.results.PL?.flatrate || []); // Pobierz platformy dostępne w Polsce
+        setWatchProviders(providersData.results.PL?.flatrate || []);
         setNavigationIds(navigationData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Wystąpił błąd');
@@ -287,6 +297,22 @@ export default function MovieDetailsClient() {
               </div>
             </div>
           </CardContent>
+
+          {/* Sekcja ze zwiastunem wewnątrz karty */}
+          {trailerKey && (
+            <CardContent className="mt-6 border-t border-zinc-800/80 pt-6">
+              <p className="font-bold text-white mb-4">Zwiastun:</p>
+              <div className="relative pt-[56.25%]">
+                <iframe
+                  className="absolute inset-0 w-full h-full rounded-lg"
+                  src={`https://www.youtube.com/embed/${trailerKey}`}
+                  title="Zwiastun filmu"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </CardContent>
+          )}
         </Card>
       </div>
     </div>

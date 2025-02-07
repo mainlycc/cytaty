@@ -42,6 +42,14 @@ export interface Movie {
   overview: string;
   genres: Genre[];
   production_countries: ProductionCountry[];
+  videos?: {
+    results: Array<{
+      key: string;
+      site: string;
+      type: string;
+      official: boolean;
+    }>;
+  };
 }
 
 export const fetchUpcomingMovies = async () => {
