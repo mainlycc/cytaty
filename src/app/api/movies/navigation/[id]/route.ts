@@ -25,14 +25,9 @@ interface TMDBMovie {
   vote_count: number;
 }
 
-type RouteParams = {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
-
 export async function GET(
   req: NextRequest,
-  context: RouteParams
+  { params }: { params: { id: string } }
 ) {
   try {
     const response = await fetch(
@@ -46,7 +41,7 @@ export async function GET(
     const data = await response.json() as TMDBResponse;
     const movies = data.results;
     
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === context.params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
     
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
     const nextId = currentIndex < movies.length - 1 ? movies[currentIndex + 1].id.toString() : null;
