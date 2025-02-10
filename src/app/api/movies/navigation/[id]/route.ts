@@ -25,9 +25,13 @@ interface TMDBMovie {
   vote_count: number;
 }
 
+type Props = {
+  params: { id: string }
+}
+
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  props: Props
 ) {
   try {
     const response = await fetch(
@@ -41,7 +45,7 @@ export async function GET(
     const data = await response.json() as TMDBResponse;
     const movies = data.results;
     
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === props.params.id);
     
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
     const nextId = currentIndex < movies.length - 1 ? movies[currentIndex + 1].id.toString() : null;
