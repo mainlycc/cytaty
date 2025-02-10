@@ -25,12 +25,16 @@ interface TMDBMovie {
   vote_count: number;
 }
 
+type RouteParams = {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteParams
 ) {
   try {
-    // Pobierz listę filmów z tym samym sortowaniem jak na stronie głównej
     const response = await fetch(
       `${tmdb.baseUrl}/movie/popular?api_key=${tmdb.apiKey}&language=pl-PL`
     );
@@ -42,10 +46,8 @@ export async function GET(
     const data = await response.json() as TMDBResponse;
     const movies = data.results;
     
-    // Znajdź indeks obecnego filmu
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === context.params.id);
     
-    // Określ ID poprzedniego i następnego filmu
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
     const nextId = currentIndex < movies.length - 1 ? movies[currentIndex + 1].id.toString() : null;
 
