@@ -54,23 +54,6 @@ export function LoginForm({
     }
   }
 
-  const handleOAuthLogin = async (provider: 'google' | 'apple') => {
-    try {
-      const { error: _error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-      
-      if (_error) {
-        toast.error(_error.message)
-      }
-    } catch {
-      toast.error("Wystąpił błąd podczas logowania")
-    }
-  }
-
   const handleGoogleLogin = async () => {
     try {
       setLoading(true)
