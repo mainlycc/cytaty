@@ -27,8 +27,8 @@ interface TMDBMovie {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
-) {
+  context: { params: { id: string } }
+): Promise<Response> {
   try {
     const response = await fetch(
       `${tmdb.baseUrl}/movie/popular?api_key=${tmdb.apiKey}&language=pl-PL`
@@ -41,7 +41,7 @@ export async function GET(
     const data = await response.json() as TMDBResponse;
     const movies = data.results;
     
-    const currentIndex = movies.findIndex((movie) => movie.id.toString() === params.id);
+    const currentIndex = movies.findIndex((movie) => movie.id.toString() === context.params.id);
     
     const previousId = currentIndex > 0 ? movies[currentIndex - 1].id.toString() : null;
     const nextId = currentIndex < movies.length - 1 ? movies[currentIndex + 1].id.toString() : null;
@@ -50,4 +50,4 @@ export async function GET(
   } catch {
     return NextResponse.json({ previousId: null, nextId: null }, { status: 500 });
   }
-}
+} 

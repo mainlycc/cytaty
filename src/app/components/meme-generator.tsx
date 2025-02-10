@@ -21,10 +21,10 @@ export function MemeGenerator() {
   const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const supabase = createClientComponentClient()
-  const topTextDraggableRef = useRef<HTMLElement>(null)
-  const bottomTextDraggableRef = useRef<HTMLElement>(null)
-  const topTextRef = useRef<HTMLDivElement>(null)
-  const bottomTextRef = useRef<HTMLDivElement>(null)
+  const topTextDraggableRef = useRef<HTMLElement>({} as HTMLElement)
+  const bottomTextDraggableRef = useRef<HTMLElement>({} as HTMLElement)
+  const topTextRef = useRef<HTMLDivElement>({} as HTMLDivElement)
+  const bottomTextRef = useRef<HTMLDivElement>({} as HTMLDivElement)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

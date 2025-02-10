@@ -22,7 +22,7 @@ import { Eye, EyeOff } from "lucide-react"
 export function RegisterForm({
  className,
  ...props
-}: React.ComponentPropsWithoutRef<"div">): React.JSX.Element {
+}: React.ComponentPropsWithoutRef<"div">): JSX.Element {
  const [email, setEmail] = useState("")
  const [password, setPassword] = useState("")
  const [confirmPassword, setConfirmPassword] = useState("")
