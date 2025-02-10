@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { tmdb } from '@/lib/tmdb';
 
 interface TMDBResponse {
