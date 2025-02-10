@@ -120,14 +120,14 @@ const BentoGrid = () => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 max-w-7xl mx-auto">
           {cards.map((card, i) => (
-            <div key={i} className={card.className || 'md:col-span-2'}>
+            <div key={i} className={`${card.className || 'md:col-span-2'} last:border-b-0`}>
               {card.link ? (
                 <Link 
                   href={card.link}
                   className="block transform transition-all duration-300 hover:-translate-y-1"
                 >
                   <div
-                    className={`group relative overflow-hidden rounded-xl bg-black/20 border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-${card.color.split('-')[1]}/10`}
+                    className="group relative overflow-hidden rounded-xl bg-black/20 hover:border-white/20 transition-all duration-300"
                   >
                     <div 
                       className={`absolute inset-0 bg-gradient-to-b ${card.color} transition-opacity duration-300 group-hover:opacity-70 opacity-0`} 
@@ -150,7 +150,7 @@ const BentoGrid = () => {
                 </Link>
               ) : (
                 <div
-                  className={`group relative overflow-hidden rounded-xl bg-black/20 border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-${card.color.split('-')[1]}/10`}
+                  className="group relative overflow-hidden rounded-xl bg-black/20 hover:border-white/20 transition-all duration-300"
                 >
                   <div 
                     className={`absolute inset-0 bg-gradient-to-b ${card.color} transition-opacity duration-300 group-hover:opacity-70 opacity-0`} 

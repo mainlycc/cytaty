@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
-import { ChevronDown, LogIn, LogOut } from 'lucide-react'
+import { ChevronDown, LogIn, LogOut, Menu, X } from 'lucide-react'
 import Image from "next/image"
 
 const NavItem = ({ href, children, items }: { href: string; children: React.ReactNode; items?: { title: string; href: string }[] }) => {
@@ -48,6 +48,7 @@ export function NavMenu() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState<{ username?: string, avatar?: string | null } | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const supabase = createClientComponentClient()
 
   const checkAuth = async () => {
@@ -101,14 +102,18 @@ export function NavMenu() {
               className="w-8 h-8"
             />
           </Link>
-          <div className="flex-1 flex items-center justify-center space-x-4 lg:space-x-6">
+
+          {/* Menu dla desktop */}
+          <div className="hidden md:flex flex-1 items-center justify-center space-x-4 lg:space-x-6">
             <NavItem href="/">Strona główna</NavItem>
             <NavItem href="/filmy">Filmy</NavItem>
             <NavItem href="/memy">Memy</NavItem>
             <NavItem href="/quizy">Quizy</NavItem>
             <NavItem href="/kontakt">Kontakt</NavItem>
           </div>
-          <div className="flex items-center">
+
+          {/* Przycisk logowania/wylogowania dla desktop */}
+          <div className="hidden md:flex items-center">
             {isLoggedIn ? (
               <div className="flex items-center gap-2">
                 <Link href="/dashboard">
@@ -151,9 +156,92 @@ export function NavMenu() {
               </Link>
             )}
           </div>
+
+          {/* Przycisk menu mobilnego */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-white"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </nav>
+
+        {/* Menu mobilne */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 top-16 bg-black/98 z-50"> 
+            <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+              <div className="flex flex-col p-4 space-y-4 bg-gradient-to-b from-zinc-900/80 to-black">
+                <Link 
+                  href="/" 
+                  className="text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Strona główna
+                </Link>
+                <Link 
+                  href="/filmy" 
+                  className="text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Filmy
+                </Link>
+                <Link 
+                  href="/memy" 
+                  className="text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Memy
+                </Link>
+                <Link 
+                  href="/quizy" 
+                  className="text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Quizy
+                </Link>
+                <Link 
+                  href="/kontakt" 
+                  className="text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Kontakt
+                </Link>
+                
+                <div className="pt-2 pb-16">
+                  {isLoggedIn ? (
+                    <>
+                      <Link 
+                        href="/dashboard" 
+                        className="block text-white hover:text-red-500 py-3 text-lg font-medium border-b border-zinc-800/50"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full text-left text-white hover:text-red-500 py-3 text-lg font-medium flex items-center"
+                      >
+                        <LogOut className="h-5 w-5 mr-2" /> Wyloguj
+                      </button>
+                    </>
+                  ) : (
+                    <Link 
+                      href="/auth/login" 
+                      className="block text-white hover:text-red-500 py-3 text-lg font-medium flex items-center"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <LogIn className="h-5 w-5 mr-2" /> Zaloguj się
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-

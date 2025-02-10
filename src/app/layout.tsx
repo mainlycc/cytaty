@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <NavMenu />
         <div className="flex flex-col min-h-screen bg-gradient-to-b from-zinc-900 to-black">
-          <div className="flex-grow pt-16">
+          <div className="flex-grow pt-16 md:pt-16">
             {children}
           </div>
           <Footer />

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
-import { Share2, ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import { Share2, ChevronLeft, ChevronRight, Heart, ChevronDown, ChevronUp } from "lucide-react"
 import { toast } from 'sonner'
 import { Input } from "./ui/input"
 import Image from "next/image"
@@ -59,6 +59,7 @@ export function MemeWall() {
   const [sortPeriod, setSortPeriod] = useState<SortPeriod>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [expandedComments, setExpandedComments] = useState<number[]>([])
   const supabase = createClientComponentClient()
 
   const formatDate = (dateString: string) => {
@@ -273,6 +274,14 @@ export function MemeWall() {
     }
   }
 
+  const toggleComments = (memeId: number) => {
+    setExpandedComments(prev => 
+      prev.includes(memeId) 
+        ? prev.filter(id => id !== memeId)
+        : [...prev, memeId]
+    )
+  }
+
   const totalPages = Math.ceil(totalCount / MEMES_PER_PAGE)
 
   const generatePaginationNumbers = () => {
@@ -435,60 +444,71 @@ export function MemeWall() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="text-zinc-400 hover:text-zinc-100"
                   onClick={() => handleLike(meme.id)}
-                  className={`flex items-center gap-2 ${
-                    meme.user_has_liked 
-                      ? 'text-red-500 hover:text-red-400' 
-                      : 'text-zinc-400 hover:text-zinc-100'
-                  }`}
                 >
-                  <Heart 
-                    className={`w-4 h-4 ${meme.user_has_liked ? 'fill-current' : ''}`} 
+                  <Heart
+                    className={`h-5 w-5 mr-1.5 ${
+                      meme.user_has_liked ? "fill-red-500 text-red-500" : ""
+                    }`}
                   />
-                  <span>{meme.likes_count || 0}</span>
+                  {meme.likes_count || 0}
                 </Button>
-                <Button 
-                  variant="default"
+
+                <Button
+                  variant="ghost"
                   size="sm"
-                  className="bg-red-950/50 text-red-500 border border-red-800 hover:bg-red-900/50"
+                  className="text-zinc-400 hover:text-zinc-100"
+                  onClick={() => toggleComments(meme.id)}
+                >
+                  {expandedComments.includes(meme.id) ? (
+                    <ChevronUp className="h-5 w-5 mr-1.5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 mr-1.5" />
+                  )}
+                  Komentarze ({meme.comments?.length || 0})
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-zinc-400 hover:text-zinc-100"
                   onClick={() => handleShare(meme)}
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
+                  <Share2 className="h-5 w-5 mr-1.5" />
                   Udostępnij
                 </Button>
               </div>
             </div>
 
-            <div className="mt-6 border-t border-zinc-800/80 pt-4">
-              <h3 className="text-zinc-400 text-sm mb-4">
-                Komentarze ({meme.comments?.length || 0})
-              </h3>
-              
-              <div className="space-y-4">
-                {meme.comments && meme.comments.length > 0 ? (
-                  meme.comments.map((comment: Comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      {comment.users?.avatar ? (
-                        <img 
-                          src={comment.users.avatar} 
-                          alt={`Avatar ${comment.users.username}`}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
-                          <span className="text-xs text-zinc-400">
+            {expandedComments.includes(meme.id) && (
+              <div className="mt-4 space-y-4">
+                <div className="space-y-4">
+                  {meme.comments?.map((comment) => (
+                    <div key={comment.id} className="flex items-start gap-3 text-sm">
+                      <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                        {comment.users?.avatar ? (
+                          <Image
+                            src={comment.users.avatar}
+                            alt={comment.users.username || ''}
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <span className="text-zinc-400">
                             {comment.users?.username?.charAt(0).toUpperCase() || '?'}
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-zinc-300 text-sm font-medium">
-                            {comment.users?.username || 'Anonim'}
+                          <span className="font-medium text-zinc-200">
+                            {comment.users?.username || 'Użytkownik usunięty'}
                           </span>
                           <span className="text-zinc-500 text-xs">
                             {formatDate(comment.created_at)}
@@ -497,33 +517,25 @@ export function MemeWall() {
                         <p className="text-zinc-300 mt-1">{comment.content}</p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-zinc-500 text-sm">Brak komentarzy</p>
-                )}
-              </div>
+                  ))}
+                </div>
 
-              <div className="mt-4 flex gap-2">
-                <Input
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Dodaj komentarz..."
-                  className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      handleAddComment(meme.id)
-                    }
-                  }}
-                />
-                <Button
-                  onClick={() => handleAddComment(meme.id)}
-                  className="bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50"
-                >
-                  Dodaj
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Input
+                    placeholder="Dodaj komentarz..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
+                  />
+                  <Button
+                    onClick={() => handleAddComment(meme.id)}
+                    className="bg-red-500/80 hover:bg-red-500 text-white border-none"
+                  >
+                    Wyślij
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       ))}
