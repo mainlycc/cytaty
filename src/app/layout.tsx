@@ -15,8 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cytaty",
-  description: "Cytaty z filmów",
+  title: "Cytaty Filmowe",
+  description: "Platforma z cytatami filmowymi",
+  icons: {
+    icon: '/movie-reel-white.png',
+    apple: '/movie-reel-white.png',
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
+      <head>
+        <link rel="icon" href="/movie-reel.png" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <NavMenu />
         <div className="flex flex-col min-h-screen bg-gradient-to-b from-zinc-900 to-black">
