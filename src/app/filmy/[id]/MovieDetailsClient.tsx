@@ -264,27 +264,35 @@ export default function MovieDetailsClient() {
                 </div>
                 <div className="mb-6">
                   <span className="font-bold text-white">Dostępne na platformach:</span>
-                  <div className="flex space-x-2 mt-2">
-                    {watchProviders.map((provider) => (
-                      <div key={provider.provider_name} className="relative group">
-                        <Image
-                          src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
-                          alt={provider.provider_name}
-                          width={45}
-                          height={45}
-                          className="rounded transition-transform hover:scale-110"
-                        />
-                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
-                          {provider.provider_name}
-                        </div>
+                  <div className="mt-2">
+                    {watchProviders.length > 0 ? (
+                      <div className="flex space-x-2">
+                        {watchProviders.map((provider) => (
+                          <div key={provider.provider_name} className="relative group">
+                            <Image
+                              src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
+                              alt={provider.provider_name}
+                              width={45}
+                              height={45}
+                              className="rounded transition-transform hover:scale-110"
+                            />
+                            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
+                              {provider.provider_name}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <p className="text-zinc-400 italic">
+                        Film nie jest obecnie dostępny na żadnej platformie streamingowej w Polsce.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {trailer && (
+            {trailer ? (
               <div className="w-full mt-6">
                 <h3 className="text-xl font-semibold text-white mb-4">Zwiastun</h3>
                 <div className="relative pb-[56.25%] h-0">
@@ -295,6 +303,12 @@ export default function MovieDetailsClient() {
                     allowFullScreen
                   />
                 </div>
+              </div>
+            ) : (
+              <div className="w-full mt-6">
+                <p className="text-zinc-400 italic text-center">
+                  Zwiastun filmu nie jest dostępny.
+                </p>
               </div>
             )}
           </CardContent>
