@@ -23,7 +23,7 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-red-950 to-black">
+    <div className="min-h-screen bg-gradient-to-b from-black via-red-950/60 to-black">
       {isLoading ? (
         <div className="h-screen flex items-center justify-center">
           <Spinner 

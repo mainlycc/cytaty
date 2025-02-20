@@ -97,9 +97,9 @@ export function NavMenu() {
             <Image
               src="/movie-reel.png"
               alt="Logo"
-              width={24}
-              height={24}
-              className="w-6 h-6 invert"
+              width={30}
+              height={30}
+              className="w-8 h-8 invert"
             />
             <span className="text-xl font-['Phudu'] font-bold text-white hover:text-red-500 transition-colors">
               

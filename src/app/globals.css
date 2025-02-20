@@ -78,3 +78,15 @@ body {
     -1px  1px 0 #000,
      1px  1px 0 #000;
 }
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s infinite;
+}
