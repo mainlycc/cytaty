@@ -6,6 +6,7 @@ import { tmdb } from '@/lib/tmdb'
 import type { Movie, TimeWindow } from '@/lib/tmdb'
 import { Card, CardContent } from './card'
 import Image from 'next/image'
+import { Star, StarHalf } from 'lucide-react'
 
 interface Genre {
   id: number;
@@ -111,6 +112,28 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
     </div>
   );
 }
+
+const RatingStars = ({ rating }: { rating: number }) => {
+  const normalizedRating = rating / 2;
+  const fullStars = Math.floor(normalizedRating);
+  const hasHalfStar = normalizedRating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-1">
+      {[...Array(fullStars)].map((_, i) => (
+        <Star key={`full-${i}`} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+      ))}
+      {hasHalfStar && (
+        <StarHalf className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <Star key={`empty-${i}`} className="w-4 h-4 text-zinc-600" />
+      ))}
+      <span className="ml-1 text-sm text-zinc-300">({rating.toFixed(1)})</span>
+    </div>
+  );
+};
 
 export function MovieGrid() {
   const [movies, setMovies] = useState<Movie[]>([])
@@ -346,10 +369,8 @@ export function MovieGrid() {
                         className="object-cover rounded-lg"
                       />
                     </div>
-                    <h2 className="text-white font-semibold truncate">{movie.title}</h2>
-                    <p className="text-zinc-400 text-sm">
-                      Ocena: {movie.vote_average.toFixed(1)}/10
-                    </p>
+                    <h2 className="text-white font-semibold truncate mb-1">{movie.title}</h2>
+                    <RatingStars rating={movie.vote_average} />
                   </CardContent>
                 </Card>
               </Link>

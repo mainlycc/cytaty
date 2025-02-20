@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { tmdb } from '@/lib/tmdb';
 import type { Movie } from '@/lib/tmdb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import Image from 'next/image';
+import { Star, StarHalf, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
 
 type CastMember = {
   name: string;
@@ -39,9 +41,35 @@ type Video = {
   type: string;
 };
 
+const RatingStars = ({ rating }: { rating: number }) => {
+  // Konwertujemy ocenę z skali 0-10 na 0-5
+  const normalizedRating = rating / 2;
+  const fullStars = Math.floor(normalizedRating);
+  const hasHalfStar = normalizedRating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-1">
+      {[...Array(fullStars)].map((_, i) => (
+        <Star key={`full-${i}`} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+      ))}
+      {hasHalfStar && (
+        <StarHalf className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <Star key={`empty-${i}`} className="w-5 h-5 text-zinc-600" />
+      ))}
+      <span className="ml-2 text-zinc-300">({rating.toFixed(1)})</span>
+    </div>
+  );
+};
+
 export default function MovieDetailsClient() {
   const { id } = useParams();
+  const router = useRouter();
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [nextMovie, setNextMovie] = useState<Movie | null>(null);
+  const [prevMovie, setPrevMovie] = useState<Movie | null>(null);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [director, setDirector] = useState<Director | null>(null);
   const [watchProviders, setWatchProviders] = useState<WatchProvider[]>([]);
@@ -57,23 +85,38 @@ export default function MovieDetailsClient() {
       setError(null);
 
       try {
-        const [movieResponse, creditsResponse, providersResponse, videosResponse] = await Promise.all([
+        const [movieResponse, creditsResponse, providersResponse, videosResponse, trendingResponse] = await Promise.all([
           fetch(`${tmdb.baseUrl}/movie/${id}?api_key=${tmdb.apiKey}&language=pl-PL`),
           fetch(`${tmdb.baseUrl}/movie/${id}/credits?api_key=${tmdb.apiKey}&language=pl-PL`),
           fetch(`${tmdb.baseUrl}/movie/${id}/watch/providers?api_key=${tmdb.apiKey}`),
-          fetch(`${tmdb.baseUrl}/movie/${id}/videos?api_key=${tmdb.apiKey}&language=pl-PL`)
+          fetch(`${tmdb.baseUrl}/movie/${id}/videos?api_key=${tmdb.apiKey}&language=pl-PL`),
+          fetch(`${tmdb.baseUrl}/trending/movie/week?api_key=${tmdb.apiKey}&language=pl-PL`)
         ]);
 
-        if (!movieResponse.ok || !creditsResponse.ok || !providersResponse.ok || !videosResponse.ok) {
+        if (!movieResponse.ok || !creditsResponse.ok || !providersResponse.ok || !videosResponse.ok || !trendingResponse.ok) {
           throw new Error('Nie udało się pobrać szczegółów filmu');
         }
 
-        const [movieData, creditsData, providersData, videosData] = await Promise.all([
+        const [movieData, creditsData, providersData, videosData, trendingData] = await Promise.all([
           movieResponse.json(),
           creditsResponse.json(),
           providersResponse.json(),
-          videosResponse.json()
+          videosResponse.json(),
+          trendingResponse.json()
         ]);
+
+        // Znajdź indeks obecnego filmu w liście trendujących
+        const currentIndex = trendingData.results.findIndex((m: Movie) => m.id.toString() === id);
+        
+        // Ustaw następny i poprzedni film
+        if (currentIndex !== -1) {
+          if (currentIndex > 0) {
+            setPrevMovie(trendingData.results[currentIndex - 1]);
+          }
+          if (currentIndex < trendingData.results.length - 1) {
+            setNextMovie(trendingData.results[currentIndex + 1]);
+          }
+        }
 
         setMovie(movieData);
         setCast(creditsData.cast.slice(0, 5));
@@ -97,6 +140,19 @@ export default function MovieDetailsClient() {
 
     fetchMovieDetails();
   }, [id]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && prevMovie) {
+        router.push(`/filmy/${prevMovie.id}`);
+      } else if (e.key === 'ArrowRight' && nextMovie) {
+        router.push(`/filmy/${nextMovie.id}`);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [prevMovie, nextMovie, router]);
 
   if (isLoading) {
     return (
@@ -135,6 +191,30 @@ export default function MovieDetailsClient() {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-red-800/70" />
       
+      {/* Przyciski nawigacji */}
+      <div className="fixed top-1/2 -translate-y-1/2 w-full left-0 px-8 md:px-24 pointer-events-none">
+        <div className="max-w-7xl mx-auto flex justify-between">
+          {prevMovie && (
+            <Button
+              onClick={() => router.push(`/filmy/${prevMovie.id}`)}
+              className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110"
+              aria-label="Poprzedni film"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </Button>
+          )}
+          {nextMovie && (
+            <Button
+              onClick={() => router.push(`/filmy/${nextMovie.id}`)}
+              className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110"
+              aria-label="Następny film"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </Button>
+          )}
+        </div>
+      </div>
+      
       <div className="relative container mx-auto py-8 max-w-3xl">
         <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
           <CardHeader>
@@ -166,37 +246,40 @@ export default function MovieDetailsClient() {
                 <p className="mb-6">
                   <span className="font-bold text-white">Gatunki:</span> {movie.genres.map((genre: Genre) => genre.name).join(', ')}
                 </p>
-                <p className="mb-6">
-                  <span className="font-bold text-white">Ocena:</span> {movie.vote_average} / 10
-                </p>
-                <p className="mb-6">
+                <div className="mb-6">
+                  <span className="font-bold text-white">Ocena:</span>
+                  <div className="mt-1">
+                    <RatingStars rating={movie.vote_average} />
+                  </div>
+                </div>
+                <div className="mb-6">
                   <span className="font-bold text-white">Obsada:</span>
-                </p>
-                <ul className="list-disc list-inside mb-6 text-zinc-300">
-                  {cast.map((member) => (
-                    <li key={member.name}>
-                      <span className="text-white">{member.name}</span> jako {member.character}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mb-6">
+                  <ul className="list-disc list-inside mt-1 text-zinc-300">
+                    {cast.map((member) => (
+                      <li key={member.name}>
+                        <span className="text-white">{member.name}</span> jako {member.character}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mb-6">
                   <span className="font-bold text-white">Dostępne na platformach:</span>
-                </p>
-                <div className="flex space-x-2">
-                  {watchProviders.map((provider) => (
-                    <div key={provider.provider_name} className="relative group">
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
-                        alt={provider.provider_name}
-                        width={45}
-                        height={45}
-                        className="rounded transition-transform hover:scale-110"
-                      />
-                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
-                        {provider.provider_name}
+                  <div className="flex space-x-2 mt-2">
+                    {watchProviders.map((provider) => (
+                      <div key={provider.provider_name} className="relative group">
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w45${provider.logo_path}`}
+                          alt={provider.provider_name}
+                          width={45}
+                          height={45}
+                          className="rounded transition-transform hover:scale-110"
+                        />
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
+                          {provider.provider_name}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
