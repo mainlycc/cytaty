@@ -93,14 +93,17 @@ export function NavMenu() {
     <div className="bg-black/100 backdrop-blur-sm fixed w-full z-10">
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/logo.png"
-              alt="Cytaty z filmów"
-              width={32}
-              height={32}
-              className="w-8 h-8"
+              src="/movie-reel.png"
+              alt="Logo"
+              width={24}
+              height={24}
+              className="w-6 h-6 invert"
             />
+            <span className="text-xl font-['Phudu'] font-bold text-white hover:text-red-500 transition-colors">
+              
+            </span>
           </Link>
 
           {/* Menu dla desktop */}
