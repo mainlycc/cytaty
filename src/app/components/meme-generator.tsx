@@ -48,6 +48,9 @@ export function MemeGenerator() {
   const bottomTextRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  
+  // Inicjalizacja klienta Supabase
+  const supabase = createClientComponentClient();
 
   // Obsługa zmiany obrazu
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,7 +236,7 @@ export function MemeGenerator() {
   };
 
   // Pobierz wymiary obrazu po załadowaniu
-  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const onImageLoad = () => {
     // Ustaw crop na początku na cały obraz
     const initialCrop = {
       x: 0,
@@ -266,12 +269,81 @@ export function MemeGenerator() {
         return;
       }
       
-      // Implementacja zapisywania do Supabase może być dodana tutaj
+      // Konwertuj obraz do formatu base64 lub blob do przesłania
+      const imageUrl = croppedImageUrl || previewUrl;
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Utwórz unikalną nazwę pliku
+      const fileName = `meme_${Date.now()}.${selectedImage.name.split('.').pop()}`;
+      
+      // Prześlij obraz do Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('memes')
+        .upload(fileName, blob);
+        
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+      
+      // Pobierz publiczny URL obrazu
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('memes')
+        .getPublicUrl(fileName);
+      
+      // Zapisz dane mema w bazie danych
+      const { error: insertError } = await supabase
+        .from('memes')
+        .insert({
+          image_url: publicUrl,
+          top_text: topText,
+          bottom_text: bottomText,
+          tags: tags,
+          created_at: new Date().toISOString()
+        });
+        
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+      
       showToast.success("Mem został zapisany!");
+      
+      // Opcjonalnie: wyczyść formularz po zapisaniu
+      setTopText("");
+      setBottomText("");
+      setTags([]);
+      setSelectedImage(null);
+      setPreviewUrl("");
+      setCroppedImageUrl("");
+      
     } catch (error) {
       console.error("Błąd podczas zapisywania mema:", error);
       showToast.error("Wystąpił błąd podczas zapisywania mema");
     }
+  };
+
+  // Funkcja obsługi przeciągania tekstu
+  const handleTextDragStart = (
+    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>
+  ) => {
+    return () => {
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        setPosition({
+          x: moveEvent.clientX,
+          y: moveEvent.clientY
+        });
+      };
+      
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
   };
 
   return (
@@ -353,6 +425,7 @@ export function MemeGenerator() {
                     <button 
                       onClick={() => removeTag(tag)}
                       className="text-zinc-400 hover:text-zinc-200"
+                      aria-label={`Usuń tag ${tag}`}
                     >
                       ✕
                     </button>
@@ -376,10 +449,13 @@ export function MemeGenerator() {
         {previewUrl ? (
           <div className="relative bg-black/40 rounded-md overflow-hidden backdrop-blur-sm h-[500px] flex items-center justify-center">
             <div className="relative w-full h-full flex items-center justify-center">
-              <img
+              <Image
                 src={croppedImageUrl || previewUrl}
                 alt="Podgląd mema"
                 className="max-w-full max-h-full object-contain"
+                fill
+                style={{ objectFit: 'contain' }}
+                unoptimized={true} // Dla dynamicznie generowanych obrazów
               />
               
               {!isCropping && (
@@ -394,21 +470,13 @@ export function MemeGenerator() {
                       transform: 'translate(-50%, -50%)',
                       maxWidth: '80%'
                     }}
-                    onMouseDown={(e) => {
-                      const handleMouseMove = (moveEvent: MouseEvent) => {
-                        setTopPosition({
-                          x: moveEvent.clientX,
-                          y: moveEvent.clientY
-                        });
-                      };
-                      
-                      const handleMouseUp = () => {
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
-                      };
-                      
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
+                    onMouseDown={handleTextDragStart(setTopPosition)}
+                    tabIndex={0}
+                    aria-label="Przeciągnij tekst górny"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleTextDragStart(setTopPosition)();
+                      }
                     }}
                   >
                     {topText}
@@ -424,21 +492,13 @@ export function MemeGenerator() {
                       transform: 'translate(-50%, -50%)',
                       maxWidth: '80%'
                     }}
-                    onMouseDown={(e) => {
-                      const handleMouseMove = (moveEvent: MouseEvent) => {
-                        setBottomPosition({
-                          x: moveEvent.clientX,
-                          y: moveEvent.clientY
-                        });
-                      };
-                      
-                      const handleMouseUp = () => {
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
-                      };
-                      
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
+                    onMouseDown={handleTextDragStart(setBottomPosition)}
+                    tabIndex={0}
+                    aria-label="Przeciągnij tekst dolny"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleTextDragStart(setBottomPosition)();
+                      }
                     }}
                   >
                     {bottomText}
@@ -471,6 +531,7 @@ export function MemeGenerator() {
                 onClick={handleCancelCropping}
                 className="text-zinc-400 hover:text-white p-1"
                 aria-label="Zamknij"
+                tabIndex={0}
               >
                 ✕
               </button>
