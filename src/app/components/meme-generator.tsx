@@ -278,7 +278,7 @@ export function MemeGenerator() {
       const fileName = `meme_${Date.now()}.${selectedImage.name.split('.').pop()}`;
       
       // Prześlij obraz do Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase
+      const { error: uploadError } = await supabase
         .storage
         .from('memes')
         .upload(fileName, blob);
