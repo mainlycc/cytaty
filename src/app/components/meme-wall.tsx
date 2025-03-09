@@ -60,6 +60,7 @@ export function MemeWall() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [expandedComments, setExpandedComments] = useState<number[]>([])
+  const [enlargedMeme, setEnlargedMeme] = useState<MemeWithLikes | null>(null)
   const supabase = createClientComponentClient()
 
   const formatDate = (dateString: string) => {
@@ -310,6 +311,14 @@ export function MemeWall() {
     return pages
   }
 
+  const handleEnlargeMeme = (meme: MemeWithLikes) => {
+    setEnlargedMeme(meme)
+  }
+
+  const handleCloseEnlarged = () => {
+    setEnlargedMeme(null)
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
       <div className="flex justify-center gap-2">
@@ -373,7 +382,13 @@ export function MemeWall() {
           className="bg-black/50 backdrop-blur-sm border-zinc-800/80 hover:bg-black/60 transition-colors"
         >
           <CardContent className="p-6">
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+            <div 
+              className="relative aspect-video bg-black rounded-lg overflow-hidden cursor-pointer"
+              onClick={() => handleEnlargeMeme(meme)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEnlargeMeme(meme)}
+              tabIndex={0}
+              aria-label="Kliknij, aby powiększyć mem"
+            >
               <Image
                 src={meme.image_url}
                 alt="Mem"
@@ -423,12 +438,12 @@ export function MemeWall() {
                     </div>
                   )}
                   <span className="text-zinc-400">
-                    Autor: {meme.users?.username || 'Anonim'}
+                    {meme.users?.username || 'Anonim'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 text-sm">
                   <span className="text-zinc-400">
-                    Dodano: {formatDate(meme.created_at)}
+                    {formatDate(meme.created_at)}
                   </span>
                 </div>
                 {meme.hashtags && meme.hashtags.length > 0 && (
@@ -448,7 +463,7 @@ export function MemeWall() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-zinc-400 hover:text-black hover:bg-white/90"
                   onClick={() => handleLike(meme.id)}
                 >
                   <Heart
@@ -462,7 +477,7 @@ export function MemeWall() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-zinc-400 hover:text-black hover:bg-white/90"
                   onClick={() => toggleComments(meme.id)}
                 >
                   {expandedComments.includes(meme.id) ? (
@@ -476,7 +491,7 @@ export function MemeWall() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-zinc-400 hover:text-black hover:bg-white/90"
                   onClick={() => handleShare(meme)}
                 >
                   <Share2 className="h-5 w-5 mr-1.5" />
@@ -583,6 +598,65 @@ export function MemeWall() {
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+        </div>
+      )}
+
+      {enlargedMeme && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={handleCloseEnlarged}
+        >
+          <div 
+            className="relative max-w-5xl max-h-[90vh] w-full h-full flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-black/50 text-white hover:bg-black/70 rounded-full p-2"
+              onClick={handleCloseEnlarged}
+              aria-label="Zamknij powiększony mem"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </Button>
+            <div className="relative flex-grow bg-black/30 rounded-lg overflow-hidden">
+              <Image
+                src={enlargedMeme.image_url}
+                alt="Powiększony mem"
+                className="object-contain"
+                fill
+                sizes="100vw"
+                priority
+              />
+              {enlargedMeme.top_text && (
+                <div 
+                  className="absolute text-4xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `${enlargedMeme.top_position?.x || 0}%`,
+                    top: `${enlargedMeme.top_position?.y || 0}%`,
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                  }}
+                >
+                  {enlargedMeme.top_text}
+                </div>
+              )}
+              {enlargedMeme.bottom_text && (
+                <div 
+                  className="absolute text-4xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `${enlargedMeme.bottom_position?.x || 0}%`,
+                    top: `${enlargedMeme.bottom_position?.y || 0}%`,
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                  }}
+                >
+                  {enlargedMeme.bottom_text}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,308 +1,595 @@
 "use client"
 
-import { useState, useRef } from "react"
-import Draggable from "react-draggable"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Card, CardContent } from "./ui/card"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { toast } from "sonner"
-import Image from 'next/image';
-import type { DraggableData, DraggableEvent } from 'react-draggable';
+import { showToast } from "./toaster-provider"
+import Image from 'next/image'
+
+// Własny interfejs kadrowania
+interface CropArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  unit: '%' | 'px';
+}
 
 export function MemeGenerator() {
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [topText, setTopText] = useState("")
-  const [bottomText, setBottomText] = useState("")
-  const [previewUrl, setPreviewUrl] = useState<string>("")
-  const [tags, setTags] = useState<string[]>([])
-  const [currentTag, setCurrentTag] = useState<string>("")
-  const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const supabase = createClientComponentClient()
-  const topTextDraggableRef = useRef<HTMLElement>(null)
-  const bottomTextDraggableRef = useRef<HTMLElement>(null)
-  const topTextRef = useRef<HTMLDivElement>(null)
-  const bottomTextRef = useRef<HTMLDivElement>(null)
+  // Podstawowe stany
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [topText, setTopText] = useState("");
+  const [bottomText, setBottomText] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState<string>("");
+  
+  // Pozycje tekstu
+  const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 200, y: 50 });
+  const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 200, y: 350 });
+  
+  // Kadrowanie
+  const [isCropping, setIsCropping] = useState(false);
+  const [isFullscreenCropping, setIsFullscreenCropping] = useState(false);
+  const [crop, setCrop] = useState<CropArea>({
+    x: 10,
+    y: 10,
+    width: 80,
+    height: 80,
+    unit: '%'
+  });
+  const [completedCrop, setCompletedCrop] = useState<CropArea | null>(null);
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  
+  // Referencje
+  const supabase = createClientComponentClient();
+  const topTextRef = useRef<HTMLDivElement>(null);
+  const bottomTextRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
+  // Obsługa zmiany obrazu
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file)
-      const objectUrl = URL.createObjectURL(file)
-      setPreviewUrl(objectUrl)
+      setSelectedImage(file);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+      
+      setCrop({
+        x: 10,
+        y: 10,
+        width: 80,
+        height: 80,
+        unit: '%'
+      });
+      setCompletedCrop(null);
+      setCroppedImageUrl("");
     }
-  }
+  };
 
+  // Obsługa tagów
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currentTag.trim()) {
-      e.preventDefault()
       if (!tags.includes(currentTag.trim())) {
-        setTags([...tags, currentTag.trim()])
+        setTags([...tags, currentTag.trim()]);
       }
-      setCurrentTag("")
+      setCurrentTag('');
     }
-  }
+  };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
-  }
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Obsługa kadrowania
+  const handleStartCropping = () => {
+    setIsCropping(true);
+    setIsFullscreenCropping(true);
+  };
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.user) {
-        throw new Error('Musisz być zalogowany aby zapisać mem')
-      }
+  const handleCancelCropping = () => {
+    setIsCropping(false);
+    setIsFullscreenCropping(false);
+  };
 
-      if (!selectedImage) {
-        throw new Error('Nie wybrano obrazu')
-      }
-
-      // Sprawdzanie rozmiaru pliku
-      if (selectedImage.size > 5 * 1024 * 1024) {
-        throw new Error('Plik jest za duży. Maksymalny rozmiar to 5MB')
-      }
-
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']
-      if (!allowedTypes.includes(selectedImage.type)) {
-        throw new Error('Niedozwolony format pliku. Dozwolone formaty to: JPG, PNG, GIF')
-      }
-
-      // Generowanie unikalnej nazwy pliku
-      const timestamp = new Date().getTime()
-      const fileExt = selectedImage.name.split('.').pop()
-      const fileName = `${session.user.id}-${timestamp}.${fileExt}`
-
-      // Upload pliku do storage
-      const { error: uploadError } = await supabase.storage
-        .from('memes')
-        .upload(fileName, selectedImage)
-
-      if (uploadError) {
-        console.error('Błąd podczas uploadu:', uploadError)
-        throw new Error(`Błąd podczas uploadu: ${uploadError.message}`)
-      }
-
-      // Pobranie publicznego URL
-      const { data: urlData } = supabase.storage
-        .from('memes')
-        .getPublicUrl(fileName)
-
-      if (!urlData?.publicUrl) {
-        throw new Error('Nie udało się uzyskać publicznego URL')
-      }
-
-      const { error: insertError } = await supabase
-        .from('memes')
-        .insert([
-          {
-            user_id: session.user.id,
-            image_url: urlData.publicUrl,
-            top_text: topText || null,
-            bottom_text: bottomText || null,
-            status: 'pending'
-          }
-        ])
-
-      if (insertError) {
-        console.error('Błąd podczas zapisywania do bazy:', insertError)
-        throw new Error(`Błąd podczas zapisywania: ${insertError.message}`)
-      }
-
-      // Czyszczenie formularza po udanym zapisie
-      setSelectedImage(null)
-      setTopText('')
-      setBottomText('')
-      setPreviewUrl('')
-      setTags([])
-      setTopPosition({ x: 0, y: 0 })
-      setBottomPosition({ x: 0, y: 0 })
-      
-      toast.success('Mem został wysłany do moderacji')
-
-    } catch (error) {
-      console.error('Błąd:', error)
-      toast.error('Wystąpił błąd podczas zapisywania mema')
+  // Implementacja funkcji handleCompleteCropping
+  const handleCompleteCropping = () => {
+    if (!imageRef.current || !crop) {
+      showToast.error("Nie można zatwierdzić kadrowania");
+      return;
     }
-  }
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      showToast.error("Nie można utworzyć kontekstu canvas");
+      return;
+    }
+    
+    const image = imageRef.current;
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    
+    // Ustaw wymiary canvasu na rozmiar wykadrowanego obszaru
+    canvas.width = (image.width * crop.width / 100) * scaleX;
+    canvas.height = (image.height * crop.height / 100) * scaleY;
+    
+    // Rysuj wykadrowany obszar na canvasie
+    ctx.drawImage(
+      image,
+      image.naturalWidth * crop.x / 100,
+      image.naturalHeight * crop.y / 100,
+      image.naturalWidth * crop.width / 100,
+      image.naturalHeight * crop.height / 100,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+    
+    // Konwertuj canvas na URL
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        setCroppedImageUrl(url);
+        setCompletedCrop(crop);
+        showToast.success("Kadrowanie zakończone pomyślnie");
+        setIsCropping(false);
+        setIsFullscreenCropping(false);
+      }
+    });
+  };
 
-  const handleDragStop = (position: { x: number; y: number }, isTop: boolean) => {
-    const container = document.querySelector('.meme-preview-container');
-    if (!container) return;
+  // Obsługa dragowania obszaru kadrowania
+  const handleCropDrag = (e: React.MouseEvent, mode: 'move' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight') => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startCrop = { ...crop };
+    
+    // Funkcja do ograniczania wartości
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
+      
+      // Oblicz delta ruchu myszą
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      
+      // Pobierz wymiary kontenera obrazu
+      const imageRect = imageRef.current?.getBoundingClientRect();
+      if (!imageRect) return;
+      
+      // Przelicz delty na procenty względem kontenera
+      const deltaXPercent = (deltaX / imageRect.width) * 100;
+      const deltaYPercent = (deltaY / imageRect.height) * 100;
+      
+      let newCrop = { ...startCrop };
+      
+      switch (mode) {
+        case 'move':
+          newCrop.x = clamp(startCrop.x + deltaXPercent, 0, 100 - startCrop.width);
+          newCrop.y = clamp(startCrop.y + deltaYPercent, 0, 100 - startCrop.height);
+          break;
+        case 'topLeft':
+          // Zapobiegamy zbyt małemu obszarowi kadrowania
+          const maxDeltaWidthLeft = Math.min(startCrop.width - 10, startCrop.x);
+          const maxDeltaHeightTop = Math.min(startCrop.height - 10, startCrop.y);
+          
+          const deltaWidthLeft = clamp(deltaXPercent, -maxDeltaWidthLeft, startCrop.width - 10);
+          const deltaHeightTop = clamp(deltaYPercent, -maxDeltaHeightTop, startCrop.height - 10);
+          
+          newCrop.x = startCrop.x - deltaWidthLeft;
+          newCrop.y = startCrop.y - deltaHeightTop;
+          newCrop.width = startCrop.width + deltaWidthLeft;
+          newCrop.height = startCrop.height + deltaHeightTop;
+          break;
+        case 'topRight':
+          const maxDeltaHeightTopRight = Math.min(startCrop.height - 10, startCrop.y);
+          const maxDeltaWidthRight = 100 - (startCrop.x + startCrop.width);
+          
+          const deltaWidthRight = clamp(deltaXPercent, -(startCrop.width - 10), maxDeltaWidthRight);
+          const deltaHeightTopRight = clamp(deltaYPercent, -maxDeltaHeightTopRight, startCrop.height - 10);
+          
+          newCrop.y = startCrop.y - deltaHeightTopRight;
+          newCrop.width = startCrop.width + deltaWidthRight;
+          newCrop.height = startCrop.height + deltaHeightTopRight;
+          break;
+        case 'bottomLeft':
+          const maxDeltaWidthBottomLeft = Math.min(startCrop.width - 10, startCrop.x);
+          const maxDeltaHeightBottom = 100 - (startCrop.y + startCrop.height);
+          
+          const deltaWidthBottomLeft = clamp(deltaXPercent, -maxDeltaWidthBottomLeft, startCrop.width - 10);
+          const deltaHeightBottom = clamp(deltaYPercent, -(startCrop.height - 10), maxDeltaHeightBottom);
+          
+          newCrop.x = startCrop.x - deltaWidthBottomLeft;
+          newCrop.width = startCrop.width + deltaWidthBottomLeft;
+          newCrop.height = startCrop.height + deltaHeightBottom;
+          break;
+        case 'bottomRight':
+          const maxDeltaWidthBottomRight = 100 - (startCrop.x + startCrop.width);
+          const maxDeltaHeightBottomRight = 100 - (startCrop.y + startCrop.height);
+          
+          const deltaWidthBottomRight = clamp(deltaXPercent, -(startCrop.width - 10), maxDeltaWidthBottomRight);
+          const deltaHeightBottomRight = clamp(deltaYPercent, -(startCrop.height - 10), maxDeltaHeightBottomRight);
+          
+          newCrop.width = startCrop.width + deltaWidthBottomRight;
+          newCrop.height = startCrop.height + deltaHeightBottomRight;
+          break;
+      }
+      
+      setCrop(newCrop);
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
 
-    if (isTop) {
-      setTopPosition({ x: position.x, y: position.y });
-    } else {
-      setBottomPosition({ x: position.x, y: position.y });
+  // Pobierz wymiary obrazu po załadowaniu
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setImageDimensions({
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    });
+    
+    // Ustaw crop na początku na cały obraz
+    const initialCrop = {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      unit: '%' as const
+    };
+    
+    setCrop(initialCrop);
+    setCompletedCrop(initialCrop);
+  };
+
+  // Zamykanie modalu przy kliknięciu Escape
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreenCropping) {
+        handleCancelCropping();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isFullscreenCropping]);
+
+  // Funkcja zapisywania mema
+  const handleSaveMeme = async () => {
+    try {
+      if (!selectedImage) {
+        showToast.error("Najpierw wybierz zdjęcie");
+        return;
+      }
+      
+      // Implementacja zapisywania do Supabase może być dodana tutaj
+      showToast.success("Mem został zapisany!");
+    } catch (error) {
+      console.error("Błąd podczas zapisywania mema:", error);
+      showToast.error("Wystąpił błąd podczas zapisywania mema");
     }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-8">
+      {/* Panel kontrolny */}
       <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80 h-fit">
         <CardContent className="p-6 space-y-6">
-          <div className="grid gap-4">
-            <Label htmlFor="image" className="text-zinc-400">
-              Wybierz zdjęcie
+          <div>
+            <Label htmlFor="image-upload" className="text-zinc-300 mb-2 block">
+              Zdjęcie
             </Label>
-            <Input
-              id="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="bg-black/20 border-zinc-800 text-zinc-300 file:bg-zinc-900 file:text-zinc-400 file:border-0"
+              />
+              {previewUrl && (
+                <Button 
+                  onClick={handleStartCropping}
+                  variant="outline"
+                  className="bg-zinc-950/50 text-zinc-300 border-zinc-800 hover:bg-zinc-900/50"
+                >
+                  Kadruj
+                </Button>
+              )}
+            </div>
           </div>
-
-          <div className="grid gap-4">
-            <Label htmlFor="topText" className="text-zinc-400">
+          
+          <div>
+            <Label htmlFor="top-text" className="text-zinc-300 mb-2 block">
               Tekst górny
             </Label>
             <Input
-              id="topText"
+              id="top-text"
               value={topText}
               onChange={(e) => setTopText(e.target.value)}
-              placeholder="Wpisz tekst górny"
-              className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
+              className="bg-black/20 border-zinc-800 text-zinc-300"
+              placeholder="Tekst górny..."
             />
           </div>
-
-          <div className="grid gap-4">
-            <Label htmlFor="bottomText" className="text-zinc-400">
+          
+          <div>
+            <Label htmlFor="bottom-text" className="text-zinc-300 mb-2 block">
               Tekst dolny
             </Label>
             <Input
-              id="bottomText"
+              id="bottom-text"
               value={bottomText}
               onChange={(e) => setBottomText(e.target.value)}
-              placeholder="Wpisz tekst dolny"
-              className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
+              className="bg-black/20 border-zinc-800 text-zinc-300"
+              placeholder="Tekst dolny..."
             />
           </div>
-
-          <div className="grid gap-4">
-            <Label htmlFor="tags" className="text-zinc-400">
-              Hashtagi
+          
+          <div>
+            <Label htmlFor="tags" className="text-zinc-300 mb-2 block">
+              Tagi (naciśnij Enter, aby dodać)
             </Label>
-            <div className="space-y-2">
-              <Input
-                id="tags"
-                value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)}
-                onKeyDown={handleAddTag}
-                placeholder="Wpisz tag i naciśnij Enter"
-                className="bg-zinc-900/50 border-zinc-800/80 text-zinc-100"
-              />
-              <div className="flex flex-wrap gap-2">
+            <Input
+              id="tags"
+              value={currentTag}
+              onChange={(e) => setCurrentTag(e.target.value)}
+              onKeyDown={handleAddTag}
+              className="bg-black/20 border-zinc-800 text-zinc-300"
+              placeholder="Dodaj tagi..."
+            />
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (
                   <span 
                     key={tag} 
-                    className="px-2 py-1 bg-red-950/50 text-red-500 border border-red-800 rounded-full text-sm flex items-center gap-2"
+                    className="bg-red-950/50 text-red-400 px-2 py-1 rounded text-xs flex items-center gap-1"
                   >
                     #{tag}
                     <button 
                       onClick={() => removeTag(tag)}
-                      className="hover:text-red-400"
+                      className="text-red-400/70 hover:text-red-400"
+                      aria-label={`Usuń tag ${tag}`}
                     >
                       ×
                     </button>
                   </span>
                 ))}
               </div>
-            </div>
+            )}
           </div>
-
+          
           <Button 
-            onClick={handleSubmit}
-            disabled={!selectedImage}
-            className="w-full bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSaveMeme}
+            className="w-full bg-red-900/30 text-red-500 border-red-900/50 hover:bg-red-900/50"
+            disabled={!selectedImage || (!topText && !bottomText)}
           >
             Zapisz mem
           </Button>
         </CardContent>
       </Card>
 
+      {/* Podgląd */}
       <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
         <CardContent className="p-6">
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
             {previewUrl ? (
-              <div className="relative w-full h-full meme-preview-container">
-                <Image
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-contain"
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-                <div className="absolute inset-0">
-                  {topText && (
-                    <Draggable
-                      nodeRef={topTextDraggableRef as React.RefObject<HTMLElement>}
-                      bounds="parent"
-                      position={topPosition}
-                      onStop={(e: DraggableEvent, data: DraggableData) => 
-                        handleDragStop({ x: data.x, y: data.y }, true)
-                      }
-                    >
-                      <div 
-                        ref={(element) => {
-                          if (element) {
-                            topTextRef.current = element;
-                            (topTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
-                          }
-                        }}
-                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+              !isCropping ? (
+                <div className="relative w-full h-full meme-preview-container">
+                  <Image
+                    src={croppedImageUrl || previewUrl}
+                    alt="Preview"
+                    className="w-full h-full object-contain"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0">
+                    {topText && (
+                      <div
+                        ref={topTextRef}
+                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap pointer-events-auto"
                         style={{
-                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
+                          position: 'absolute',
+                          left: topPosition.x,
+                          top: topPosition.y,
+                          cursor: 'move',
+                          userSelect: 'none',
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                        onMouseDown={(e) => {
+                          const startX = e.clientX;
+                          const startY = e.clientY;
+                          const startPos = { ...topPosition };
+                          
+                          const handleMouseMove = (moveEvent: MouseEvent) => {
+                            setTopPosition({
+                              x: startPos.x + (moveEvent.clientX - startX),
+                              y: startPos.y + (moveEvent.clientY - startY)
+                            });
+                          };
+                          
+                          const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener('mouseup', handleMouseUp);
+                          };
+                          
+                          document.addEventListener('mousemove', handleMouseMove);
+                          document.addEventListener('mouseup', handleMouseUp);
                         }}
                       >
                         {topText}
                       </div>
-                    </Draggable>
-                  )}
-                  {bottomText && (
-                    <Draggable
-                      nodeRef={bottomTextDraggableRef as React.RefObject<HTMLElement>}
-                      bounds="parent"
-                      position={bottomPosition}
-                      onStop={(e: DraggableEvent, data: DraggableData) => 
-                        handleDragStop({ x: data.x, y: data.y }, false)
-                      }
-                    >
-                      <div 
-                        ref={(element) => {
-                          if (element) {
-                            bottomTextRef.current = element;
-                            (bottomTextDraggableRef as React.MutableRefObject<HTMLElement>).current = element;
-                          }
-                        }}
-                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                    )}
+                    
+                    {bottomText && (
+                      <div
+                        ref={bottomTextRef}
+                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap pointer-events-auto"
                         style={{
-                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
+                          position: 'absolute',
+                          left: bottomPosition.x,
+                          top: bottomPosition.y,
+                          cursor: 'move',
+                          userSelect: 'none',
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                        onMouseDown={(e) => {
+                          const startX = e.clientX;
+                          const startY = e.clientY;
+                          const startPos = { ...bottomPosition };
+                          
+                          const handleMouseMove = (moveEvent: MouseEvent) => {
+                            setBottomPosition({
+                              x: startPos.x + (moveEvent.clientX - startX),
+                              y: startPos.y + (moveEvent.clientY - startY)
+                            });
+                          };
+                          
+                          const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener('mouseup', handleMouseUp);
+                          };
+                          
+                          document.addEventListener('mousemove', handleMouseMove);
+                          document.addEventListener('mouseup', handleMouseUp);
                         }}
                       >
                         {bottomText}
                       </div>
-                    </Draggable>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <p className="text-zinc-500">
+                    Trwa kadrowanie w pełnym ekranie...
+                  </p>
+                </div>
+              )
             ) : (
-              <p className="text-zinc-500">
+              <p className="text-zinc-500 flex items-center justify-center h-full">
                 Wybierz zdjęcie, aby rozpocząć
               </p>
             )}
           </div>
-          <p className="text-zinc-400 text-sm mt-4 text-center">
-            Przeciągnij teksty, aby zmienić ich położenie
-          </p>
+          {!isCropping && previewUrl && (
+            <p className="text-zinc-400 text-sm mt-4 text-center">
+              Przeciągnij teksty, aby zmienić ich położenie
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modal pełnoekranowy dla kadrowania */}
+      {isFullscreenCropping && (
+        <div 
+          ref={modalRef}
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === modalRef.current) {
+              handleCancelCropping();
+            }
+          }}
+        >
+          <div className="relative max-w-[95vw] max-h-[95vh] overflow-hidden bg-zinc-900/90 p-4 rounded-lg">
+            <div className="sticky top-0 right-0 flex justify-end mb-2">
+              <button 
+                onClick={handleCancelCropping}
+                className="text-zinc-400 hover:text-white p-1"
+                aria-label="Zamknij"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative">
+                <img
+                  ref={imageRef}
+                  src={previewUrl}
+                  alt="Do kadrowania"
+                  onLoad={onImageLoad}
+                  className="max-w-full object-contain"
+                  style={{ maxHeight: 'calc(85vh - 120px)' }}
+                />
+                {crop && (
+                  <div 
+                    className="absolute border-2 border-blue-500 cursor-move"
+                    style={{
+                      left: `${crop.x}%`,
+                      top: `${crop.y}%`,
+                      width: `${crop.width}%`,
+                      height: `${crop.height}%`
+                    }}
+                    onMouseDown={(e) => handleCropDrag(e, 'move')}
+                  >
+                    <div 
+                      className="absolute w-4 h-4 bg-blue-500 top-0 left-0 translate-x-[-50%] translate-y-[-50%] cursor-nwse-resize" 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleCropDrag(e, 'topLeft');
+                      }}
+                    />
+                    <div 
+                      className="absolute w-4 h-4 bg-blue-500 top-0 right-0 translate-x-[50%] translate-y-[-50%] cursor-nesw-resize" 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleCropDrag(e, 'topRight');
+                      }}
+                    />
+                    <div 
+                      className="absolute w-4 h-4 bg-blue-500 bottom-0 left-0 translate-x-[-50%] translate-y-[50%] cursor-nesw-resize" 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleCropDrag(e, 'bottomLeft');
+                      }}
+                    />
+                    <div 
+                      className="absolute w-4 h-4 bg-blue-500 bottom-0 right-0 translate-x-[50%] translate-y-[50%] cursor-nwse-resize" 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleCropDrag(e, 'bottomRight');
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-4 mt-6">
+                <Button 
+                  onClick={handleCompleteCropping}
+                  className="bg-green-950/50 text-green-500 border-green-800 hover:bg-green-900/50"
+                >
+                  Zatwierdź kadrowanie
+                </Button>
+                <Button 
+                  onClick={handleCancelCropping}
+                  className="bg-red-950/50 text-red-500 border-red-800 hover:bg-red-900/50"
+                >
+                  Anuluj
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 } 

@@ -1,8 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Hero from '@/app/components/ui/hero'
 import { Spinner } from '@/app/components/ui/spinner'
+import dynamic from 'next/dynamic'
+
+const Hero = dynamic(() => import('./components/ui/hero'), {
+  ssr: true,
+  loading: () => (
+    <div className="h-screen flex items-center justify-center">
+      <Spinner size="lg" className="bg-red-500" loading={true} />
+    </div>
+  )
+})
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
