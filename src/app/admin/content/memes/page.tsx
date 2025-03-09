@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { MemeModeration } from "@/app/components/meme-moderation"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 
 export default async function AdminMemesPage() {
   const supabase = createServerComponentClient({ cookies })
@@ -37,15 +38,19 @@ export default async function AdminMemesPage() {
             <h1 className="text-3xl font-bold text-zinc-100 mb-8">Moderacja Memów</h1>
             
             <div className="grid gap-6">
-              {pendingMemes?.map((meme) => (
+              {pendingMemes?.map((meme, index) => (
                 <Card key={meme.id} className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
                   <CardContent className="p-6">
                     <div className="flex gap-6">
-                      <div className="w-48 h-48">
-                        <img 
+                      <div className="w-48 h-48 relative">
+                        <Image 
                           src={meme.image_url} 
                           alt="Mem do moderacji"
-                          className="w-full h-full object-cover rounded-lg"
+                          fill
+                          sizes="192px"
+                          priority={index < 3}
+                          className="object-cover rounded-lg"
+                          style={{ objectFit: "cover" }}
                         />
                       </div>
                       <div className="flex-1">

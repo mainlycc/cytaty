@@ -41,16 +41,12 @@ export function MemeGenerator() {
     height: 80,
     unit: '%'
   });
-  const [completedCrop, setCompletedCrop] = useState<CropArea | null>(null);
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   
   // Referencje
-  const supabase = createClientComponentClient();
   const topTextRef = useRef<HTMLDivElement>(null);
   const bottomTextRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Obsługa zmiany obrazu
@@ -68,7 +64,6 @@ export function MemeGenerator() {
         height: 80,
         unit: '%'
       });
-      setCompletedCrop(null);
       setCroppedImageUrl("");
     }
   };
@@ -138,7 +133,6 @@ export function MemeGenerator() {
       if (blob) {
         const url = URL.createObjectURL(blob);
         setCroppedImageUrl(url);
-        setCompletedCrop(crop);
         showToast.success("Kadrowanie zakończone pomyślnie");
         setIsCropping(false);
         setIsFullscreenCropping(false);
@@ -159,47 +153,48 @@ export function MemeGenerator() {
     const handleMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();
       
-      // Oblicz delta ruchu myszą
+      if (!imageRef.current) return;
+      
+      const imageRect = imageRef.current.getBoundingClientRect();
       const deltaX = moveEvent.clientX - startX;
       const deltaY = moveEvent.clientY - startY;
       
-      // Pobierz wymiary kontenera obrazu
-      const imageRect = imageRef.current?.getBoundingClientRect();
-      if (!imageRect) return;
-      
-      // Przelicz delty na procenty względem kontenera
+      // Konwertuj piksele na procenty
       const deltaXPercent = (deltaX / imageRect.width) * 100;
       const deltaYPercent = (deltaY / imageRect.height) * 100;
       
-      let newCrop = { ...startCrop };
+      const newCrop = { ...startCrop };
       
       switch (mode) {
         case 'move':
-          newCrop.x = clamp(startCrop.x + deltaXPercent, 0, 100 - startCrop.width);
-          newCrop.y = clamp(startCrop.y + deltaYPercent, 0, 100 - startCrop.height);
+          // Ograniczenie ruchu do granic obrazu
+          const maxX = 100 - newCrop.width;
+          const maxY = 100 - newCrop.height;
+          
+          newCrop.x = clamp(startCrop.x + deltaXPercent, 0, maxX);
+          newCrop.y = clamp(startCrop.y + deltaYPercent, 0, maxY);
           break;
         case 'topLeft':
-          // Zapobiegamy zbyt małemu obszarowi kadrowania
-          const maxDeltaWidthLeft = Math.min(startCrop.width - 10, startCrop.x);
-          const maxDeltaHeightTop = Math.min(startCrop.height - 10, startCrop.y);
+          const maxDeltaWidthTopLeft = Math.min(startCrop.width - 10, startCrop.x);
+          const maxDeltaHeightTopLeft = Math.min(startCrop.height - 10, startCrop.y);
           
-          const deltaWidthLeft = clamp(deltaXPercent, -maxDeltaWidthLeft, startCrop.width - 10);
-          const deltaHeightTop = clamp(deltaYPercent, -maxDeltaHeightTop, startCrop.height - 10);
+          const deltaWidthTopLeft = clamp(deltaXPercent, -maxDeltaWidthTopLeft, startCrop.width - 10);
+          const deltaHeightTopLeft = clamp(deltaYPercent, -maxDeltaHeightTopLeft, startCrop.height - 10);
           
-          newCrop.x = startCrop.x - deltaWidthLeft;
-          newCrop.y = startCrop.y - deltaHeightTop;
-          newCrop.width = startCrop.width + deltaWidthLeft;
-          newCrop.height = startCrop.height + deltaHeightTop;
+          newCrop.x = startCrop.x - deltaWidthTopLeft;
+          newCrop.y = startCrop.y - deltaHeightTopLeft;
+          newCrop.width = startCrop.width + deltaWidthTopLeft;
+          newCrop.height = startCrop.height + deltaHeightTopLeft;
           break;
         case 'topRight':
+          const maxDeltaWidthTopRight = 100 - (startCrop.x + startCrop.width);
           const maxDeltaHeightTopRight = Math.min(startCrop.height - 10, startCrop.y);
-          const maxDeltaWidthRight = 100 - (startCrop.x + startCrop.width);
           
-          const deltaWidthRight = clamp(deltaXPercent, -(startCrop.width - 10), maxDeltaWidthRight);
+          const deltaWidthTopRight = clamp(deltaXPercent, -(startCrop.width - 10), maxDeltaWidthTopRight);
           const deltaHeightTopRight = clamp(deltaYPercent, -maxDeltaHeightTopRight, startCrop.height - 10);
           
           newCrop.y = startCrop.y - deltaHeightTopRight;
-          newCrop.width = startCrop.width + deltaWidthRight;
+          newCrop.width = startCrop.width + deltaWidthTopRight;
           newCrop.height = startCrop.height + deltaHeightTopRight;
           break;
         case 'bottomLeft':
@@ -239,12 +234,6 @@ export function MemeGenerator() {
 
   // Pobierz wymiary obrazu po załadowaniu
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    setImageDimensions({
-      width: img.naturalWidth,
-      height: img.naturalHeight
-    });
-    
     // Ustaw crop na początku na cały obraz
     const initialCrop = {
       x: 0,
@@ -255,7 +244,6 @@ export function MemeGenerator() {
     };
     
     setCrop(initialCrop);
-    setCompletedCrop(initialCrop);
   };
 
   // Zamykanie modalu przy kliknięciu Escape
@@ -292,22 +280,22 @@ export function MemeGenerator() {
       <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80 h-fit">
         <CardContent className="p-6 space-y-6">
           <div>
-            <Label htmlFor="image-upload" className="text-zinc-300 mb-2 block">
-              Zdjęcie
+            <Label htmlFor="image" className="text-zinc-300 mb-2 block text-sm">
+              Wybierz zdjęcie
             </Label>
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <Input
-                id="image-upload"
+                id="image"
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="bg-black/20 border-zinc-800 text-zinc-300 file:bg-zinc-900 file:text-zinc-400 file:border-0"
+                className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
               />
               {previewUrl && (
-                <Button 
+                <Button
                   onClick={handleStartCropping}
                   variant="outline"
-                  className="bg-zinc-950/50 text-zinc-300 border-zinc-800 hover:bg-zinc-900/50"
+                  className="bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700/70 hover:text-zinc-100"
                 >
                   Kadruj
                 </Button>
@@ -316,33 +304,33 @@ export function MemeGenerator() {
           </div>
           
           <div>
-            <Label htmlFor="top-text" className="text-zinc-300 mb-2 block">
+            <Label htmlFor="topText" className="text-zinc-300 mb-2 block text-sm">
               Tekst górny
             </Label>
             <Input
-              id="top-text"
+              id="topText"
               value={topText}
               onChange={(e) => setTopText(e.target.value)}
-              className="bg-black/20 border-zinc-800 text-zinc-300"
-              placeholder="Tekst górny..."
+              className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
+              placeholder="Tekst górny"
             />
           </div>
           
           <div>
-            <Label htmlFor="bottom-text" className="text-zinc-300 mb-2 block">
+            <Label htmlFor="bottomText" className="text-zinc-300 mb-2 block text-sm">
               Tekst dolny
             </Label>
             <Input
-              id="bottom-text"
+              id="bottomText"
               value={bottomText}
               onChange={(e) => setBottomText(e.target.value)}
-              className="bg-black/20 border-zinc-800 text-zinc-300"
-              placeholder="Tekst dolny..."
+              className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
+              placeholder="Tekst dolny"
             />
           </div>
           
           <div>
-            <Label htmlFor="tags" className="text-zinc-300 mb-2 block">
+            <Label htmlFor="tags" className="text-zinc-300 mb-2 block text-sm">
               Tagi (naciśnij Enter, aby dodać)
             </Label>
             <Input
@@ -350,25 +338,25 @@ export function MemeGenerator() {
               value={currentTag}
               onChange={(e) => setCurrentTag(e.target.value)}
               onKeyDown={handleAddTag}
-              className="bg-black/20 border-zinc-800 text-zinc-300"
-              placeholder="Dodaj tagi..."
+              className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
+              placeholder="Dodaj tagi"
             />
+            
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {tags.map((tag) => (
-                  <span 
+                  <div 
                     key={tag} 
-                    className="bg-red-950/50 text-red-400 px-2 py-1 rounded text-xs flex items-center gap-1"
+                    className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded-md text-xs flex items-center gap-1"
                   >
-                    #{tag}
+                    {tag}
                     <button 
                       onClick={() => removeTag(tag)}
-                      className="text-red-400/70 hover:text-red-400"
-                      aria-label={`Usuń tag ${tag}`}
+                      className="text-zinc-400 hover:text-zinc-200"
                     >
-                      ×
+                      ✕
                     </button>
-                  </span>
+                  </div>
                 ))}
               </div>
             )}
@@ -376,8 +364,7 @@ export function MemeGenerator() {
           
           <Button 
             onClick={handleSaveMeme}
-            className="w-full bg-red-900/30 text-red-500 border-red-900/50 hover:bg-red-900/50"
-            disabled={!selectedImage || (!topText && !bottomText)}
+            className="w-full bg-gradient-to-r from-red-900 to-red-800 hover:from-red-800 hover:to-red-700 text-zinc-100"
           >
             Zapisz mem
           </Button>
@@ -385,117 +372,87 @@ export function MemeGenerator() {
       </Card>
 
       {/* Podgląd */}
-      <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80">
-        <CardContent className="p-6">
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-            {previewUrl ? (
-              !isCropping ? (
-                <div className="relative w-full h-full meme-preview-container">
-                  <Image
-                    src={croppedImageUrl || previewUrl}
-                    alt="Preview"
-                    className="w-full h-full object-contain"
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                  <div className="absolute inset-0">
-                    {topText && (
-                      <div
-                        ref={topTextRef}
-                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap pointer-events-auto"
-                        style={{
-                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
-                          position: 'absolute',
-                          left: topPosition.x,
-                          top: topPosition.y,
-                          cursor: 'move',
-                          userSelect: 'none',
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                        onMouseDown={(e) => {
-                          const startX = e.clientX;
-                          const startY = e.clientY;
-                          const startPos = { ...topPosition };
-                          
-                          const handleMouseMove = (moveEvent: MouseEvent) => {
-                            setTopPosition({
-                              x: startPos.x + (moveEvent.clientX - startX),
-                              y: startPos.y + (moveEvent.clientY - startY)
-                            });
-                          };
-                          
-                          const handleMouseUp = () => {
-                            document.removeEventListener('mousemove', handleMouseMove);
-                            document.removeEventListener('mouseup', handleMouseUp);
-                          };
-                          
-                          document.addEventListener('mousemove', handleMouseMove);
-                          document.addEventListener('mouseup', handleMouseUp);
-                        }}
-                      >
-                        {topText}
-                      </div>
-                    )}
-                    
-                    {bottomText && (
-                      <div
-                        ref={bottomTextRef}
-                        className="text-2xl font-bold text-white uppercase cursor-move inline-block whitespace-nowrap pointer-events-auto"
-                        style={{
-                          textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
-                          position: 'absolute',
-                          left: bottomPosition.x,
-                          top: bottomPosition.y,
-                          cursor: 'move',
-                          userSelect: 'none',
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                        onMouseDown={(e) => {
-                          const startX = e.clientX;
-                          const startY = e.clientY;
-                          const startPos = { ...bottomPosition };
-                          
-                          const handleMouseMove = (moveEvent: MouseEvent) => {
-                            setBottomPosition({
-                              x: startPos.x + (moveEvent.clientX - startX),
-                              y: startPos.y + (moveEvent.clientY - startY)
-                            });
-                          };
-                          
-                          const handleMouseUp = () => {
-                            document.removeEventListener('mousemove', handleMouseMove);
-                            document.removeEventListener('mouseup', handleMouseUp);
-                          };
-                          
-                          document.addEventListener('mousemove', handleMouseMove);
-                          document.addEventListener('mouseup', handleMouseUp);
-                        }}
-                      >
-                        {bottomText}
-                      </div>
-                    )}
+      <div className="relative">
+        {previewUrl ? (
+          <div className="relative bg-black/40 rounded-md overflow-hidden backdrop-blur-sm h-[500px] flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img
+                src={croppedImageUrl || previewUrl}
+                alt="Podgląd mema"
+                className="max-w-full max-h-full object-contain"
+              />
+              
+              {!isCropping && (
+                <>
+                  <div
+                    ref={topTextRef}
+                    className="absolute text-white text-3xl font-bold uppercase text-center px-4 py-2 cursor-move pointer-events-auto select-none"
+                    style={{
+                      textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000',
+                      left: `${topPosition.x}px`,
+                      top: `${topPosition.y}px`,
+                      transform: 'translate(-50%, -50%)',
+                      maxWidth: '80%'
+                    }}
+                    onMouseDown={(e) => {
+                      const handleMouseMove = (moveEvent: MouseEvent) => {
+                        setTopPosition({
+                          x: moveEvent.clientX,
+                          y: moveEvent.clientY
+                        });
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  >
+                    {topText}
                   </div>
-                </div>
-              ) : (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <p className="text-zinc-500">
-                    Trwa kadrowanie w pełnym ekranie...
-                  </p>
-                </div>
-              )
-            ) : (
-              <p className="text-zinc-500 flex items-center justify-center h-full">
-                Wybierz zdjęcie, aby rozpocząć
-              </p>
-            )}
+                  
+                  <div
+                    ref={bottomTextRef}
+                    className="absolute text-white text-3xl font-bold uppercase text-center px-4 py-2 cursor-move pointer-events-auto select-none"
+                    style={{
+                      textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000',
+                      left: `${bottomPosition.x}px`,
+                      top: `${bottomPosition.y}px`,
+                      transform: 'translate(-50%, -50%)',
+                      maxWidth: '80%'
+                    }}
+                    onMouseDown={(e) => {
+                      const handleMouseMove = (moveEvent: MouseEvent) => {
+                        setBottomPosition({
+                          x: moveEvent.clientX,
+                          y: moveEvent.clientY
+                        });
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  >
+                    {bottomText}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          {!isCropping && previewUrl && (
-            <p className="text-zinc-400 text-sm mt-4 text-center">
-              Przeciągnij teksty, aby zmienić ich położenie
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="bg-black/40 rounded-md h-[500px] flex items-center justify-center backdrop-blur-sm">
+            <p className="text-zinc-500">Wybierz zdjęcie, aby rozpocząć</p>
+          </div>
+        )}
+      </div>
 
       {/* Modal pełnoekranowy dla kadrowania */}
       {isFullscreenCropping && (
