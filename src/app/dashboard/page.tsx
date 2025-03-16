@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     instagram: userData?.instagram || "",
   }
 
-  // Pobierz memy i quizy użytkownika
+  // Pobierz memy i quizy użytkownika z uwzględnieniem nowej struktury tabeli
   const { data: userMemes } = await supabase
     .from('memes')
     .select('*')
@@ -149,9 +149,33 @@ export default async function DashboardPage() {
                       <div className="flex items-center gap-4">
                         <img src={meme.image_url} alt="Mem" className="w-16 h-16 object-cover rounded" />
                         <div>
-                          <p className="text-zinc-100">{meme.top_text}</p>
-                          <p className="text-zinc-400 text-sm">
+                          <p className="text-zinc-100">
+                            {meme.top_text || meme.bottom_text || "Mem bez tekstu"}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {Array.isArray(meme.hashtags) && meme.hashtags.map((tag: string, index: number) => (
+                              <span key={index} className="text-xs px-2 py-0.5 bg-red-900/30 text-red-300 rounded-full">
+                                #{typeof tag === 'string' ? tag.replace(/\\\"/g, '').replace(/\"/g, '') : tag}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-zinc-400 text-sm mt-1">
                             {new Date(meme.created_at).toLocaleDateString()}
+                            {meme.status === 'pending' && (
+                              <span className="ml-2 text-amber-400 text-xs">
+                                (oczekuje na zatwierdzenie)
+                              </span>
+                            )}
+                            {meme.status === 'approved' && (
+                              <span className="ml-2 text-green-400 text-xs">
+                                (zatwierdzony)
+                              </span>
+                            )}
+                            {meme.status === 'rejected' && (
+                              <span className="ml-2 text-red-400 text-xs">
+                                (odrzucony)
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>

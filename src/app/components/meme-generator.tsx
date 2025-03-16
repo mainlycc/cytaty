@@ -8,6 +8,19 @@ import { Card, CardContent } from "./ui/card"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { showToast } from "./toaster-provider"
 import Image from 'next/image'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { useTags } from "@/hooks/use-tags"
+import { X } from "lucide-react"
+import { Database } from "@/lib/database.types"
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert"
+import MemeDisplay from './MemeDisplay'
+
+// Definiowanie typu Tag na podstawie typów z bazy danych
+type Tag = {
+  id: string;
+  label: string;
+  color?: string;
+}
 
 // Własny interfejs kadrowania
 interface CropArea {
@@ -18,18 +31,42 @@ interface CropArea {
   unit: '%' | 'px';
 }
 
+// Dodanie definicji typu dla memów
+interface MemeData {
+  id: string;
+  image_url: string;
+  top_text: string | null;
+  bottom_text: string | null;
+  top_position: { x: number; y: number } | null;
+  bottom_position: { x: number; y: number } | null;
+  top_text_size: number | null;
+  bottom_text_size: number | null;
+  top_text_color: string | null;
+  bottom_text_color: string | null;
+  hashtags: string | string[] | null;
+  created_at: string;
+  status: string;
+  comments: number | string | null;
+  likes: number | string | null;
+  user_id: string | null;
+}
+
 export function MemeGenerator() {
   // Podstawowe stany
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [topText, setTopText] = useState("");
   const [bottomText, setBottomText] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [currentTag, setCurrentTag] = useState<string>("");
   
   // Pozycje tekstu
-  const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 200, y: 50 });
-  const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 200, y: 350 });
+  const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 50, y: 15 });
+  const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 50, y: 85 });
+  
+  // Wielkość tekstu
+  const [topTextSize, setTopTextSize] = useState<number>(3); // domyślna wielkość 3rem
+  const [bottomTextSize, setBottomTextSize] = useState<number>(3); // domyślna wielkość 3rem
   
   // Kadrowanie
   const [isCropping, setIsCropping] = useState(false);
@@ -43,7 +80,7 @@ export function MemeGenerator() {
   });
   const [croppedImageUrl, setCroppedImageUrl] = useState<string>("");
   
-  // Referencje
+  // Referencje - poprawione typy
   const topTextRef = useRef<HTMLDivElement>(null);
   const bottomTextRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -51,6 +88,13 @@ export function MemeGenerator() {
   
   // Inicjalizacja klienta Supabase
   const supabase = createClientComponentClient();
+
+  // Kolory tekstu
+  const [topTextColor, setTopTextColor] = useState<string>("#ffffff");
+  const [bottomTextColor, setBottomTextColor] = useState<string>("#ffffff");
+
+  // Stan informujący o wysłaniu mema
+  const [memSubmitted, setMemSubmitted] = useState(false);
 
   // Obsługa zmiany obrazu
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,18 +115,47 @@ export function MemeGenerator() {
     }
   };
 
-  // Obsługa tagów
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && currentTag.trim()) {
-      if (!tags.includes(currentTag.trim())) {
-        setTags([...tags, currentTag.trim()]);
-      }
-      setCurrentTag('');
-    }
+  // Obsługa usuwania obrazu
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setPreviewUrl("");
+    setCroppedImageUrl("");
+    
+    // Resetowanie kadrowania
+    setCrop({
+      x: 10,
+      y: 10,
+      width: 80,
+      height: 80,
+      unit: '%'
+    });
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+  // Obsługa tagów
+  const { tags: tagsHook, addTag, removeTag, hasReachedMax } = useTags({
+    onChange: (newTags) => {
+      console.log("Zaktualizowano tagi:", newTags);
+    },
+    maxTags: 5,
+  });
+  const [tagInput, setTagInput] = useState<string>("");
+  
+  const handleAddTag = () => {
+    if (!tagInput.trim() || hasReachedMax) return;
+    
+    addTag({
+      id: crypto.randomUUID(),
+      label: tagInput.trim(),
+    });
+    
+    setTagInput("");
+  };
+  
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && tagInput) {
+      e.preventDefault();
+      handleAddTag();
+    }
   };
 
   // Obsługa kadrowania
@@ -261,13 +334,89 @@ export function MemeGenerator() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isFullscreenCropping]);
 
-  // Funkcja zapisywania mema
+  // Dodanie obsługi zmiany rozmiaru okna
+  useEffect(() => {
+    const handleResize = () => {
+      // Upewniamy się, że tekst pozostaje widoczny po zmianie rozmiaru okna
+      if (topTextRef.current && bottomTextRef.current) {
+        // Aktualizacja pozycji nie jest potrzebna, jeśli używamy wartości procentowych
+        // To wymusza ponowne renderowanie
+        setTopPosition(prev => ({ ...prev }));
+        setBottomPosition(prev => ({ ...prev }));
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Funkcja ładowania zapisanych memów
+  const loadMeme = (meme: MemeData) => {
+    // Ustawienie tekstu
+    setTopText(meme.top_text || "");
+    setBottomText(meme.bottom_text || "");
+    
+    // Ustawienie pozycji tekstu (jeśli dostępne)
+    if (meme.top_position) {
+      setTopPosition({
+        x: meme.top_position.x,
+        y: meme.top_position.y
+      });
+    }
+    
+    if (meme.bottom_position) {
+      setBottomPosition({
+        x: meme.bottom_position.x,
+        y: meme.bottom_position.y
+      });
+    }
+    
+    // Ustawienie rozmiaru tekstu (z wartościami domyślnymi jeśli brak)
+    setTopTextSize(meme.top_text_size || 3);
+    setBottomTextSize(meme.bottom_text_size || 3);
+    
+    // Ustawienie koloru tekstu (z wartościami domyślnymi jeśli brak)
+    setTopTextColor(meme.top_text_color || "#ffffff");
+    setBottomTextColor(meme.bottom_text_color || "#ffffff");
+    
+    // Załadowanie tagów
+    if (meme.hashtags) {
+      let tagsArray: string[] = [];
+      
+      // Obsługa dla różnych formatów hashtags
+      if (Array.isArray(meme.hashtags)) {
+        // Jeśli hashtags jest już tablicą
+        tagsArray = meme.hashtags as string[];
+      } else {
+        // Jeśli hashtags jest stringiem w formacie "{\"tag1\",\"tag2\"}"
+        const tagsString = (meme.hashtags as string).replace('"{', '').replace(']}"', '');
+        tagsArray = tagsString ? tagsString.split(',').map((tag: string) => 
+          tag.replace(/\\\"/g, '').replace(/\"/g, '')
+        ) : [];
+      }
+      
+      // Dodanie tagów
+      tagsArray.forEach((tagText: string) => {
+        if (tagText) {
+          addTag({
+            id: crypto.randomUUID(),
+            label: tagText.trim(),
+          });
+        }
+      });
+    }
+  };
+
+  // Funkcja zapisywania mema - dostosowana do nowej struktury tabeli
   const handleSaveMeme = async () => {
     try {
       if (!selectedImage) {
         showToast.error("Najpierw wybierz zdjęcie");
         return;
       }
+      
+      // Dodaj komunikat o rozpoczęciu procesu zapisywania
+      showToast.info("Trwa zapisywanie mema...");
       
       // Konwertuj obraz do formatu base64 lub blob do przesłania
       const imageUrl = croppedImageUrl || previewUrl;
@@ -293,47 +442,102 @@ export function MemeGenerator() {
         .from('memes')
         .getPublicUrl(fileName);
       
-      // Zapisz dane mema w bazie danych
+      // Przygotowanie tablicy tagów
+      const formattedTags = tags.map(tag => tag.label);
+      
+      // Zapisz dane mema w bazie danych - zgodnie z nową strukturą tabeli
       const { error: insertError } = await supabase
         .from('memes')
         .insert({
           image_url: publicUrl,
-          top_text: topText,
-          bottom_text: bottomText,
-          tags: tags,
-          created_at: new Date().toISOString()
+          top_text: topText || null,
+          bottom_text: bottomText || null,
+          
+          // Pozycje jako obiekty JSON
+          top_position: topText ? { x: topPosition.x, y: topPosition.y } : null,
+          bottom_position: bottomText ? { x: bottomPosition.x, y: bottomPosition.y } : null,
+          
+          // Rozmiar i kolor tekstu
+          top_text_size: topTextSize,
+          bottom_text_size: bottomTextSize,
+          top_text_color: topTextColor,
+          bottom_text_color: bottomTextColor,
+          
+          // Hashtags jako tablica
+          hashtags: formattedTags.length > 0 ? formattedTags : null,
+          
+          // Pozostałe pola
+          created_at: new Date().toISOString(),
+          status: 'pending',
+          comments: 0,
+          likes: 0,
         });
-        
+      
       if (insertError) {
-        throw new Error(insertError.message);
+        showToast.error(`Błąd podczas zapisywania mema: ${insertError.message}`);
+        return;
       }
       
-      showToast.success("Mem został zapisany!");
+      // Ustaw status wysłania mema
+      setMemSubmitted(true);
       
-      // Opcjonalnie: wyczyść formularz po zapisaniu
+      // Wyczyść formularz po pomyślnym zapisie
       setTopText("");
       setBottomText("");
-      setTags([]);
-      setSelectedImage(null);
-      setPreviewUrl("");
-      setCroppedImageUrl("");
+      setTopTextSize(3);
+      setBottomTextSize(3);
+      setTopTextColor("#ffffff");
+      setBottomTextColor("#ffffff");
+      setTagInput("");
       
+      showToast.success("Mem został zapisany i czeka na zatwierdzenie");
     } catch (error) {
       console.error("Błąd podczas zapisywania mema:", error);
       showToast.error("Wystąpił błąd podczas zapisywania mema");
+      alert("Wystąpił błąd podczas zapisywania mema: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
-  // Funkcja obsługi przeciągania tekstu
+  // Funkcja obsługi przeciągania tekstu - poprawiona z uwzględnieniem typów
   const handleTextDragStart = (
-    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>
+    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
+    textRef: React.RefObject<HTMLDivElement>
   ) => {
-    return () => {
+    return (e: React.MouseEvent | React.KeyboardEvent) => {
+      e.preventDefault();
+      
+      // Pobierz kontener (rodzic elementu tekstowego)
+      const container = textRef.current?.parentElement;
+      if (!container) return;
+      
+      const containerRect = container.getBoundingClientRect();
+      
+      // Początkowe współrzędne - różne dla zdarzeń myszy i klawiatury
+      let startX: number, startY: number;
+      
+      if ('clientX' in e) {
+        // Zdarzenie myszy
+        startX = e.clientX;
+        startY = e.clientY;
+      } else {
+        // Zdarzenie klawiatury - użyj aktualnej pozycji elementu
+        const textRect = textRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+        startX = textRect.left;
+        startY = textRect.top;
+      }
+      
       const handleMouseMove = (moveEvent: MouseEvent) => {
-        setPosition({
-          x: moveEvent.clientX,
-          y: moveEvent.clientY
-        });
+        moveEvent.preventDefault();
+        
+        // Obliczamy pozycję jako procent szerokości/wysokości kontenera
+        const x = ((moveEvent.clientX - containerRect.left) / containerRect.width) * 100;
+        const y = ((moveEvent.clientY - containerRect.top) / containerRect.height) * 100;
+        
+        // Ograniczamy wartości do zakresu 5-95%, aby tekst nie wychodził poza kontener
+        const clampedX = Math.min(Math.max(x, 5), 95);
+        const clampedY = Math.min(Math.max(y, 5), 95);
+        
+        setPosition({ x: clampedX, y: clampedY });
       };
       
       const handleMouseUp = () => {
@@ -343,6 +547,33 @@ export function MemeGenerator() {
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+    };
+  };
+
+  // Funkcja do obsługi zdarzeń klawiatury dla tekstu - poprawiona z uwzględnieniem typów
+  const handleTextKeyDown = (
+    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
+    textRef: React.RefObject<HTMLDivElement>
+  ) => {
+    return (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        // Symuluj kliknięcie, aby rozpocząć przeciąganie
+        const rect = textRef.current?.getBoundingClientRect();
+        if (rect) {
+          // Ustaw pozycję początkową na środek elementu
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          
+          // Rozpocznij przeciąganie
+          const container = textRef.current?.parentElement;
+          if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const xPercent = ((x - containerRect.left) / containerRect.width) * 100;
+            const yPercent = ((y - containerRect.top) / containerRect.height) * 100;
+            setPosition({ x: xPercent, y: yPercent });
+          }
+        }
+      }
     };
   };
 
@@ -356,23 +587,41 @@ export function MemeGenerator() {
               Wybierz zdjęcie
             </Label>
             <div className="flex gap-2">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
-              />
-              {previewUrl && (
+              {!selectedImage ? (
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
+                />
+              ) : (
+                <div className="flex gap-2 w-full">
+                  <div className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-md px-3 py-2 text-zinc-300 text-sm truncate">
+                    {selectedImage.name}
+                  </div>
+                  <Button
+                    onClick={handleRemoveImage}
+                    variant="destructive"
+                    className="bg-red-900/80 border-red-800 text-zinc-200 hover:bg-red-800"
+                    size="sm"
+                  >
+                    Usuń
+                  </Button>
+                </div>
+              )}
+            </div>
+            {previewUrl && (
+              <div className="flex gap-2 mt-2">
                 <Button
                   onClick={handleStartCropping}
                   variant="outline"
-                  className="bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700/70 hover:text-zinc-100"
+                  className="bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700/70 hover:text-zinc-100 w-full"
                 >
                   Kadruj
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           
           <div>
@@ -386,6 +635,50 @@ export function MemeGenerator() {
               className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
               placeholder="Tekst górny"
             />
+            
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="topTextSize" className="text-zinc-300 mb-1 block text-xs">
+                  Wielkość tekstu
+                </Label>
+                <Select
+                  value={topTextSize.toString()}
+                  onValueChange={(value) => setTopTextSize(parseFloat(value))}
+                >
+                  <SelectTrigger className="bg-zinc-800/60 border-zinc-700 text-zinc-300">
+                    <SelectValue placeholder="Wybierz rozmiar" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-300">
+                    <SelectItem value="1">1 rem</SelectItem>
+                    <SelectItem value="1.5">1.5 rem</SelectItem>
+                    <SelectItem value="2">2 rem</SelectItem>
+                    <SelectItem value="2.5">2.5 rem</SelectItem>
+                    <SelectItem value="3">3 rem</SelectItem>
+                    <SelectItem value="3.5">3.5 rem</SelectItem>
+                    <SelectItem value="4">4 rem</SelectItem>
+                    <SelectItem value="4.5">4.5 rem</SelectItem>
+                    <SelectItem value="5">5 rem</SelectItem>
+                    <SelectItem value="5.5">5.5 rem</SelectItem>
+                    <SelectItem value="6">6 rem</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="topTextColor" className="text-zinc-300 mb-1 block text-xs">
+                  Kolor tekstu
+                </Label>
+                <div className="flex items-center gap-2 bg-zinc-800/60 border border-zinc-700 rounded-md px-3 py-2 h-10">
+                  <input
+                    type="color"
+                    id="topTextColor"
+                    value={topTextColor}
+                    onChange={(e) => setTopTextColor(e.target.value)}
+                    className="w-6 h-6 rounded overflow-hidden"
+                  />
+                  <span className="text-zinc-300 text-sm">{topTextColor}</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div>
@@ -399,114 +692,170 @@ export function MemeGenerator() {
               className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
               placeholder="Tekst dolny"
             />
+            
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="bottomTextSize" className="text-zinc-300 mb-1 block text-xs">
+                  Wielkość tekstu
+                </Label>
+                <Select
+                  value={bottomTextSize.toString()}
+                  onValueChange={(value) => setBottomTextSize(parseFloat(value))}
+                >
+                  <SelectTrigger className="bg-zinc-800/60 border-zinc-700 text-zinc-300">
+                    <SelectValue placeholder="Wybierz rozmiar" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-300">
+                    <SelectItem value="1">1 rem</SelectItem>
+                    <SelectItem value="1.5">1.5 rem</SelectItem>
+                    <SelectItem value="2">2 rem</SelectItem>
+                    <SelectItem value="2.5">2.5 rem</SelectItem>
+                    <SelectItem value="3">3 rem</SelectItem>
+                    <SelectItem value="3.5">3.5 rem</SelectItem>
+                    <SelectItem value="4">4 rem</SelectItem>
+                    <SelectItem value="4.5">4.5 rem</SelectItem>
+                    <SelectItem value="5">5 rem</SelectItem>
+                    <SelectItem value="5.5">5.5 rem</SelectItem>
+                    <SelectItem value="6">6 rem</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="bottomTextColor" className="text-zinc-300 mb-1 block text-xs">
+                  Kolor tekstu
+                </Label>
+                <div className="flex items-center gap-2 bg-zinc-800/60 border border-zinc-700 rounded-md px-3 py-2 h-10">
+                  <input
+                    type="color"
+                    id="bottomTextColor"
+                    value={bottomTextColor}
+                    onChange={(e) => setBottomTextColor(e.target.value)}
+                    className="w-6 h-6 rounded overflow-hidden"
+                  />
+                  <span className="text-zinc-300 text-sm">{bottomTextColor}</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div>
             <Label htmlFor="tags" className="text-zinc-300 mb-2 block text-sm">
-              Tagi (naciśnij Enter, aby dodać)
+              Tagi
             </Label>
-            <Input
-              id="tags"
-              value={currentTag}
-              onChange={(e) => setCurrentTag(e.target.value)}
-              onKeyDown={handleAddTag}
-              className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
-              placeholder="Dodaj tagi"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                className="bg-zinc-800/60 border-zinc-700 text-zinc-300 flex-1"
+                placeholder="Dodaj tag i naciśnij Enter"
+                disabled={hasReachedMax}
+                aria-label="Dodaj tag"
+              />
+              <Button
+                onClick={handleAddTag}
+                variant="outline"
+                className="bg-zinc-800/60 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
+                disabled={!tagInput.trim() || hasReachedMax}
+                aria-label="Dodaj tag"
+              >
+                Dodaj
+              </Button>
+            </div>
             
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {tags.map((tag) => (
-                  <div 
-                    key={tag} 
-                    className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded-md text-xs flex items-center gap-1"
+                  <div
+                    key={tag.id}
+                    className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${tag.color}`}
                   >
-                    {tag}
-                    <button 
-                      onClick={() => removeTag(tag)}
-                      className="text-zinc-400 hover:text-zinc-200"
-                      aria-label={`Usuń tag ${tag}`}
+                    <span>{tag.label}</span>
+                    <button
+                      onClick={() => removeTag(tag.id)}
+                      className="rounded-full h-4 w-4 flex items-center justify-center hover:bg-black/20"
+                      aria-label={`Usuń tag ${tag.label}`}
+                      tabIndex={0}
                     >
-                      ✕
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
               </div>
+            )}
+            
+            {hasReachedMax && (
+              <p className="text-xs text-amber-400 mt-2">
+                Maksymalna liczba tagów została osiągnięta (5)
+              </p>
             )}
           </div>
           
           <Button 
             onClick={handleSaveMeme}
             className="w-full bg-gradient-to-r from-red-900 to-red-800 hover:from-red-800 hover:to-red-700 text-zinc-100"
+            disabled={memSubmitted || !previewUrl || (!topText && !bottomText)}
           >
-            Zapisz mem
+            {memSubmitted ? "Zapisywanie..." : "Wyślij mem do zatwierdzenia"}
           </Button>
+          
+          {/* Komunikat o wysłanym memie */}
+          {memSubmitted && (
+            <Alert className="mt-4 bg-green-950/30 border-green-800 text-green-400">
+              <AlertTitle className="text-green-300">Mem wysłany pomyślnie!</AlertTitle>
+              <AlertDescription>
+                <p>Twój mem został wysłany do zatwierdzenia. Po akceptacji przez administratora będzie widoczny dla wszystkich.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-2 bg-green-950/50 border-green-700 text-green-400 hover:bg-green-800/30"
+                  onClick={() => setMemSubmitted(false)}
+                >
+                  Utwórz kolejny mem
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
       {/* Podgląd */}
       <div className="relative">
-        {previewUrl ? (
-          <div className="relative bg-black/40 rounded-md overflow-hidden backdrop-blur-sm h-[500px] flex items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center">
-              <Image
-                src={croppedImageUrl || previewUrl}
-                alt="Podgląd mema"
-                className="max-w-full max-h-full object-contain"
-                fill
-                style={{ objectFit: 'contain' }}
-                unoptimized={true} // Dla dynamicznie generowanych obrazów
-              />
-              
-              {!isCropping && (
-                <>
-                  <div
-                    ref={topTextRef}
-                    className="absolute text-white text-3xl font-bold uppercase text-center px-4 py-2 cursor-move pointer-events-auto select-none"
-                    style={{
-                      textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000',
-                      left: `${topPosition.x}px`,
-                      top: `${topPosition.y}px`,
-                      transform: 'translate(-50%, -50%)',
-                      maxWidth: '80%'
-                    }}
-                    onMouseDown={handleTextDragStart(setTopPosition)}
-                    tabIndex={0}
-                    aria-label="Przeciągnij tekst górny"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        handleTextDragStart(setTopPosition)();
-                      }
-                    }}
-                  >
-                    {topText}
-                  </div>
-                  
-                  <div
-                    ref={bottomTextRef}
-                    className="absolute text-white text-3xl font-bold uppercase text-center px-4 py-2 cursor-move pointer-events-auto select-none"
-                    style={{
-                      textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000',
-                      left: `${bottomPosition.x}px`,
-                      top: `${bottomPosition.y}px`,
-                      transform: 'translate(-50%, -50%)',
-                      maxWidth: '80%'
-                    }}
-                    onMouseDown={handleTextDragStart(setBottomPosition)}
-                    tabIndex={0}
-                    aria-label="Przeciągnij tekst dolny"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        handleTextDragStart(setBottomPosition)();
-                      }
-                    }}
-                  >
-                    {bottomText}
-                  </div>
-                </>
-              )}
+        {/* Alert nad podglądem, gdy mem został wysłany */}
+        {memSubmitted && (
+          <Alert className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm rounded-md border-green-800 text-green-300 p-8">
+            <div className="text-center">
+              <AlertTitle className="text-4xl font-bold mb-4">Sukces!</AlertTitle>
+              <AlertDescription className="text-xl mb-6">
+                Twój mem został wysłany do zatwierdzenia i wkrótce pojawi się w galerii.
+              </AlertDescription>
+              <Button 
+                className="bg-green-800 hover:bg-green-700 text-white"
+                onClick={() => {
+                  setMemSubmitted(false);
+                  setSelectedImage(null);
+                  setPreviewUrl("");
+                  setCroppedImageUrl("");
+                }}
+              >
+                Utwórz nowy mem
+              </Button>
             </div>
-          </div>
+          </Alert>
+        )}
+        
+        {previewUrl ? (
+          <MemeDisplay
+            imageUrl={croppedImageUrl || previewUrl}
+            topText={topText}
+            bottomText={bottomText}
+            topPosition={topPosition}
+            bottomPosition={bottomPosition}
+            topTextSize={topTextSize}
+            bottomTextSize={bottomTextSize}
+            topTextColor={topTextColor}
+            bottomTextColor={bottomTextColor}
+          />
         ) : (
           <div className="bg-black/40 rounded-md h-[500px] flex items-center justify-center backdrop-blur-sm">
             <p className="text-zinc-500">Wybierz zdjęcie, aby rozpocząć</p>

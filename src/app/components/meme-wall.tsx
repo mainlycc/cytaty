@@ -8,6 +8,7 @@ import { Share2, ChevronLeft, ChevronRight, Heart, ChevronDown, ChevronUp } from
 import { toast } from 'sonner'
 import { Input } from "./ui/input"
 import Image from "next/image"
+import MemeDisplay from './MemeDisplay'
 
 const MEMES_PER_PAGE = 50
 const MAX_VISIBLE_PAGES = 5
@@ -382,45 +383,17 @@ export function MemeWall() {
           className="bg-black/50 backdrop-blur-sm border-zinc-800/80 hover:bg-black/60 transition-colors"
         >
           <CardContent className="p-6">
-            <div 
-              className="relative aspect-video bg-black rounded-lg overflow-hidden cursor-pointer"
-              onClick={() => handleEnlargeMeme(meme)}
-              onKeyDown={(e) => e.key === 'Enter' && handleEnlargeMeme(meme)}
-              tabIndex={0}
-              aria-label="Kliknij, aby powiększyć mem"
-            >
-              <Image
-                src={meme.image_url}
-                alt="Mem"
-                className="w-full h-full object-contain"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-              {meme.top_text && (
-                <div 
-                  className="absolute text-2xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    left: `${meme.top_position?.x || 0}%`,
-                    top: `${meme.top_position?.y || 0}%`,
-                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
-                  }}
-                >
-                  {meme.top_text}
-                </div>
-              )}
-              {meme.bottom_text && (
-                <div 
-                  className="absolute text-2xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    left: `${meme.bottom_position?.x || 0}%`,
-                    top: `${meme.bottom_position?.y || 0}%`,
-                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
-                  }}
-                >
-                  {meme.bottom_text}
-                </div>
-              )}
-            </div>
+            <MemeDisplay
+              imageUrl={meme.image_url}
+              topText={meme.top_text}
+              bottomText={meme.bottom_text}
+              topPosition={meme.top_position}
+              bottomPosition={meme.bottom_position}
+              topTextSize={2}
+              bottomTextSize={2}
+              topTextColor="#ffffff"
+              bottomTextColor="#ffffff"
+            />
             <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
