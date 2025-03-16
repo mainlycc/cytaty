@@ -1,7 +1,7 @@
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { MemeGenerator } from "@/app/components/meme-generator"
+import { MemeGenerator } from "@/app/components/meme-generator-new"
 import { ToasterContainerClient } from "../components/toaster-provider"
 
 export default async function MemeGeneratorPage() {

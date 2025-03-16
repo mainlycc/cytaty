@@ -40,9 +40,6 @@ export function MemeGenerator() {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [tags, setTags] = useState<Tag[]>([]);
   
-  // Stan aktywnej zakładki
-  const [activeTab, setActiveTab] = useState<string>("upload");
-  
   // Pozycje tekstu
   const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 50, y: 15 });
   const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 50, y: 85 });
@@ -455,47 +452,61 @@ export function MemeGenerator() {
       {/* Panel kontrolny */}
       <Card className="bg-black/50 backdrop-blur-sm border-zinc-800/80 h-fit">
         <CardContent className="p-6 space-y-6">
-          <div>
-            <Label htmlFor="image" className="text-zinc-300 mb-2 block text-sm">
-              Wybierz zdjęcie
-            </Label>
-            <div className="flex gap-2">
-              {!selectedImage ? (
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
-                />
-              ) : (
-                <div className="flex gap-2 w-full">
-                  <div className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-md px-3 py-2 text-zinc-300 text-sm truncate">
-                    {selectedImage.name}
-                  </div>
-                  <Button
-                    onClick={handleRemoveImage}
-                    variant="destructive"
-                    className="bg-red-900/80 border-red-800 text-zinc-200 hover:bg-red-800"
-                    size="sm"
-                  >
-                    Usuń
-                  </Button>
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4 w-full">
+              <TabsTrigger value="upload">Wgraj zdjęcie</TabsTrigger>
+              <TabsTrigger value="templates">Gotowe szablony</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload">
+              <div>
+                <Label htmlFor="image" className="text-zinc-300 mb-2 block text-sm">
+                  Wybierz zdjęcie
+                </Label>
+                <div className="flex gap-2">
+                  {!selectedImage ? (
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="bg-zinc-800/60 border-zinc-700 text-zinc-300"
+                    />
+                  ) : (
+                    <div className="flex gap-2 w-full">
+                      <div className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-md px-3 py-2 text-zinc-300 text-sm truncate">
+                        {selectedImage.name}
+                      </div>
+                      <Button
+                        onClick={handleRemoveImage}
+                        variant="destructive"
+                        className="bg-red-900/80 border-red-800 text-zinc-200 hover:bg-red-800"
+                        size="sm"
+                      >
+                        Usuń
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {previewUrl && (
-              <div className="flex gap-2 mt-2">
-                <Button
-                  onClick={handleStartCropping}
-                  variant="outline"
-                  className="bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700/70 hover:text-zinc-100 w-full"
-                >
-                  Kadruj
-                </Button>
               </div>
-            )}
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="templates">
+              <MemeTemplates onSelect={handleTemplateSelect} />
+            </TabsContent>
+          </Tabs>
+          
+          {previewUrl && (
+            <div className="flex gap-2 mt-2">
+              <Button
+                onClick={handleStartCropping}
+                variant="outline"
+                className="bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700/70 hover:text-zinc-100 w-full"
+              >
+                Kadruj
+              </Button>
+            </div>
+          )}
           
           <div>
             <Label htmlFor="topText" className="text-zinc-300 mb-2 block text-sm">
