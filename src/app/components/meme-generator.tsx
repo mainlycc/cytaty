@@ -855,6 +855,9 @@ export function MemeGenerator() {
             bottomTextSize={bottomTextSize}
             topTextColor={topTextColor}
             bottomTextColor={bottomTextColor}
+            onTopPositionChange={setTopPosition}
+            onBottomPositionChange={setBottomPosition}
+            editable={true}
           />
         ) : (
           <div className="bg-black/40 rounded-md h-[500px] flex items-center justify-center backdrop-blur-sm">

@@ -393,6 +393,7 @@ export function MemeWall() {
               bottomTextSize={2}
               topTextColor="#ffffff"
               bottomTextColor="#ffffff"
+              editable={false}
             />
             <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">
