@@ -45,8 +45,8 @@ export function MemeGenerator() {
   const [bottomPosition, setBottomPosition] = useState<{ x: number; y: number }>({ x: 50, y: 85 });
   
   // Wielkość tekstu
-  const [topTextSize, setTopTextSize] = useState<number>(3); // domyślna wielkość 3rem
-  const [bottomTextSize, setBottomTextSize] = useState<number>(3); // domyślna wielkość 3rem
+  const [topTextSize, setTopTextSize] = useState<number>(24); // domyślna wielkość 24px
+  const [bottomTextSize, setBottomTextSize] = useState<number>(24); // domyślna wielkość 24px
   
   // Kadrowanie
   const [isFullscreenCropping, setIsFullscreenCropping] = useState(false);
@@ -433,8 +433,8 @@ export function MemeGenerator() {
       // Wyczyść formularz po pomyślnym zapisie
       setTopText("");
       setBottomText("");
-      setTopTextSize(3);
-      setBottomTextSize(3);
+      setTopTextSize(24);
+      setBottomTextSize(24);
       setTopTextColor("#ffffff");
       setBottomTextColor("#ffffff");
       setTagInput("");
@@ -533,17 +533,11 @@ export function MemeGenerator() {
                     <SelectValue placeholder="Wybierz rozmiar" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-300">
-                    <SelectItem value="1">1 rem</SelectItem>
-                    <SelectItem value="1.5">1.5 rem</SelectItem>
-                    <SelectItem value="2">2 rem</SelectItem>
-                    <SelectItem value="2.5">2.5 rem</SelectItem>
-                    <SelectItem value="3">3 rem</SelectItem>
-                    <SelectItem value="3.5">3.5 rem</SelectItem>
-                    <SelectItem value="4">4 rem</SelectItem>
-                    <SelectItem value="4.5">4.5 rem</SelectItem>
-                    <SelectItem value="5">5 rem</SelectItem>
-                    <SelectItem value="5.5">5.5 rem</SelectItem>
-                    <SelectItem value="6">6 rem</SelectItem>
+                    <SelectItem value="16">16px</SelectItem>
+                    <SelectItem value="24">24px</SelectItem>
+                    <SelectItem value="32">32px</SelectItem>
+                    <SelectItem value="48">48px</SelectItem>
+                    <SelectItem value="64">64px</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -590,17 +584,11 @@ export function MemeGenerator() {
                     <SelectValue placeholder="Wybierz rozmiar" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-300">
-                    <SelectItem value="1">1 rem</SelectItem>
-                    <SelectItem value="1.5">1.5 rem</SelectItem>
-                    <SelectItem value="2">2 rem</SelectItem>
-                    <SelectItem value="2.5">2.5 rem</SelectItem>
-                    <SelectItem value="3">3 rem</SelectItem>
-                    <SelectItem value="3.5">3.5 rem</SelectItem>
-                    <SelectItem value="4">4 rem</SelectItem>
-                    <SelectItem value="4.5">4.5 rem</SelectItem>
-                    <SelectItem value="5">5 rem</SelectItem>
-                    <SelectItem value="5.5">5.5 rem</SelectItem>
-                    <SelectItem value="6">6 rem</SelectItem>
+                    <SelectItem value="16">16px</SelectItem>
+                    <SelectItem value="24">24px</SelectItem>
+                    <SelectItem value="32">32px</SelectItem>
+                    <SelectItem value="48">48px</SelectItem>
+                    <SelectItem value="64">64px</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

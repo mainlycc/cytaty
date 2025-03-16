@@ -25,8 +25,8 @@ const MemeDisplay: React.FC<MemeDisplayProps> = ({
   bottomText,
   topPosition,
   bottomPosition,
-  topTextSize = 3,
-  bottomTextSize = 3,
+  topTextSize = 24,
+  bottomTextSize = 24,
   topTextColor = '#ffffff',
   bottomTextColor = '#ffffff',
   onTopPositionChange,
@@ -47,8 +47,8 @@ const MemeDisplay: React.FC<MemeDisplayProps> = ({
   const safeTopPosition = hasValidTopPosition ? topPosition : DEFAULT_TOP_POSITION;
   const safeBottomPosition = hasValidBottomPosition ? bottomPosition : DEFAULT_BOTTOM_POSITION;
 
-  const safeTopTextSize = topTextSize || 3;
-  const safeBottomTextSize = bottomTextSize || 3;
+  const safeTopTextSize = topTextSize || 24;
+  const safeBottomTextSize = bottomTextSize || 24;
   const safeTopTextColor = topTextColor || '#ffffff';
   const safeBottomTextColor = bottomTextColor || '#ffffff';
 
@@ -114,7 +114,7 @@ const MemeDisplay: React.FC<MemeDisplayProps> = ({
             top: `${safeTopPosition.y}%`,
             transform: 'translate(-50%, -50%)',
             maxWidth: '80%',
-            fontSize: `${safeTopTextSize}rem`,
+            fontSize: `${safeTopTextSize}px`,
             userSelect: editable ? 'none' : 'auto',
           }}
           onMouseDown={editable ? (e) => handleTextDrag(e, true) : undefined}
@@ -132,7 +132,7 @@ const MemeDisplay: React.FC<MemeDisplayProps> = ({
             top: `${safeBottomPosition.y}%`,
             transform: 'translate(-50%, -50%)',
             maxWidth: '80%',
-            fontSize: `${safeBottomTextSize}rem`,
+            fontSize: `${safeBottomTextSize}px`,
             userSelect: editable ? 'none' : 'auto',
           }}
           onMouseDown={editable ? (e) => handleTextDrag(e, false) : undefined}

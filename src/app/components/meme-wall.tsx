@@ -390,8 +390,8 @@ export function MemeWall() {
                 bottomText={meme.bottom_text}
                 topPosition={meme.top_position}
                 bottomPosition={meme.bottom_position}
-                topTextSize={2}
-                bottomTextSize={2}
+                topTextSize={20}
+                bottomTextSize={20}
                 topTextColor="#ffffff"
                 bottomTextColor="#ffffff"
                 editable={false}
@@ -617,11 +617,12 @@ export function MemeWall() {
               />
               {enlargedMeme.top_text && (
                 <div 
-                  className="absolute text-4xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  className="absolute font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
                   style={{
                     left: `${enlargedMeme.top_position?.x || 0}%`,
                     top: `${enlargedMeme.top_position?.y || 0}%`,
-                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
+                    fontSize: '40px'
                   }}
                 >
                   {enlargedMeme.top_text}
@@ -629,11 +630,12 @@ export function MemeWall() {
               )}
               {enlargedMeme.bottom_text && (
                 <div 
-                  className="absolute text-4xl font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
+                  className="absolute font-bold text-white uppercase whitespace-nowrap transform -translate-x-1/2 -translate-y-1/2"
                   style={{
                     left: `${enlargedMeme.bottom_position?.x || 0}%`,
                     top: `${enlargedMeme.bottom_position?.y || 0}%`,
-                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000'
+                    textShadow: '2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000',
+                    fontSize: '40px'
                   }}
                 >
                   {enlargedMeme.bottom_text}
