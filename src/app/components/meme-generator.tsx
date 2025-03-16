@@ -30,26 +30,6 @@ interface CropArea {
   unit: '%' | 'px';
 }
 
-// Dodanie definicji typu dla memów
-interface MemeData {
-  id: string;
-  image_url: string;
-  top_text: string | null;
-  bottom_text: string | null;
-  top_position: { x: number; y: number } | null;
-  bottom_position: { x: number; y: number } | null;
-  top_text_size: number | null;
-  bottom_text_size: number | null;
-  top_text_color: string | null;
-  bottom_text_color: string | null;
-  hashtags: string | string[] | null;
-  created_at: string;
-  status: string;
-  comments: number | string | null;
-  likes: number | string | null;
-  user_id: string | null;
-}
-
 export function MemeGenerator() {
   // Podstawowe stany
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -751,7 +731,7 @@ export function MemeGenerator() {
             <div className="flex flex-col items-center justify-center">
               <div className="relative">
                 <Image
-                  ref={imageRef as any}
+                  ref={imageRef as React.RefObject<HTMLImageElement>}
                   src={previewUrl}
                   alt="Do kadrowania"
                   onLoad={onImageLoad}
