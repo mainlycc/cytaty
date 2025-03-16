@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import Image from 'next/image';
 
 interface MemeDisplayProps {
@@ -64,11 +64,6 @@ const MemeDisplay: React.FC<MemeDisplayProps> = ({
     if (!container) return;
     
     const containerRect = container.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    
-    // Pobierz początkową pozycję
-    const initialPosition = isTopText ? safeTopPosition : safeBottomPosition;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();

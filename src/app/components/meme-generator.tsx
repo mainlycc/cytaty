@@ -7,13 +7,12 @@ import { Label } from "./ui/label"
 import { Card, CardContent } from "./ui/card"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { showToast } from "./toaster-provider"
-import Image from 'next/image'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useTags } from "@/hooks/use-tags"
 import { X } from "lucide-react"
-import { Database } from "@/lib/database.types"
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert"
 import MemeDisplay from './MemeDisplay'
+import Image from 'next/image'
 
 // Definiowanie typu Tag na podstawie typów z bazy danych
 type Tag = {
@@ -58,7 +57,6 @@ export function MemeGenerator() {
   const [bottomText, setBottomText] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [tags, setTags] = useState<Tag[]>([]);
-  const [currentTag, setCurrentTag] = useState<string>("");
   
   // Pozycje tekstu
   const [topPosition, setTopPosition] = useState<{ x: number; y: number }>({ x: 50, y: 15 });
@@ -69,7 +67,6 @@ export function MemeGenerator() {
   const [bottomTextSize, setBottomTextSize] = useState<number>(3); // domyślna wielkość 3rem
   
   // Kadrowanie
-  const [isCropping, setIsCropping] = useState(false);
   const [isFullscreenCropping, setIsFullscreenCropping] = useState(false);
   const [crop, setCrop] = useState<CropArea>({
     x: 10,
@@ -132,9 +129,10 @@ export function MemeGenerator() {
   };
 
   // Obsługa tagów
-  const { tags: tagsHook, addTag, removeTag, hasReachedMax } = useTags({
+  const { addTag, removeTag, hasReachedMax } = useTags({
     onChange: (newTags) => {
       console.log("Zaktualizowano tagi:", newTags);
+      setTags(newTags);
     },
     maxTags: 5,
   });
@@ -160,12 +158,10 @@ export function MemeGenerator() {
 
   // Obsługa kadrowania
   const handleStartCropping = () => {
-    setIsCropping(true);
     setIsFullscreenCropping(true);
   };
 
   const handleCancelCropping = () => {
-    setIsCropping(false);
     setIsFullscreenCropping(false);
   };
 
@@ -210,7 +206,6 @@ export function MemeGenerator() {
         const url = URL.createObjectURL(blob);
         setCroppedImageUrl(url);
         showToast.success("Kadrowanie zakończone pomyślnie");
-        setIsCropping(false);
         setIsFullscreenCropping(false);
       }
     });
@@ -350,63 +345,6 @@ export function MemeGenerator() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Funkcja ładowania zapisanych memów
-  const loadMeme = (meme: MemeData) => {
-    // Ustawienie tekstu
-    setTopText(meme.top_text || "");
-    setBottomText(meme.bottom_text || "");
-    
-    // Ustawienie pozycji tekstu (jeśli dostępne)
-    if (meme.top_position) {
-      setTopPosition({
-        x: meme.top_position.x,
-        y: meme.top_position.y
-      });
-    }
-    
-    if (meme.bottom_position) {
-      setBottomPosition({
-        x: meme.bottom_position.x,
-        y: meme.bottom_position.y
-      });
-    }
-    
-    // Ustawienie rozmiaru tekstu (z wartościami domyślnymi jeśli brak)
-    setTopTextSize(meme.top_text_size || 3);
-    setBottomTextSize(meme.bottom_text_size || 3);
-    
-    // Ustawienie koloru tekstu (z wartościami domyślnymi jeśli brak)
-    setTopTextColor(meme.top_text_color || "#ffffff");
-    setBottomTextColor(meme.bottom_text_color || "#ffffff");
-    
-    // Załadowanie tagów
-    if (meme.hashtags) {
-      let tagsArray: string[] = [];
-      
-      // Obsługa dla różnych formatów hashtags
-      if (Array.isArray(meme.hashtags)) {
-        // Jeśli hashtags jest już tablicą
-        tagsArray = meme.hashtags as string[];
-      } else {
-        // Jeśli hashtags jest stringiem w formacie "{\"tag1\",\"tag2\"}"
-        const tagsString = (meme.hashtags as string).replace('"{', '').replace(']}"', '');
-        tagsArray = tagsString ? tagsString.split(',').map((tag: string) => 
-          tag.replace(/\\\"/g, '').replace(/\"/g, '')
-        ) : [];
-      }
-      
-      // Dodanie tagów
-      tagsArray.forEach((tagText: string) => {
-        if (tagText) {
-          addTag({
-            id: crypto.randomUUID(),
-            label: tagText.trim(),
-          });
-        }
-      });
-    }
-  };
-
   // Funkcja zapisywania mema - dostosowana do nowej struktury tabeli
   const handleSaveMeme = async () => {
     try {
@@ -496,85 +434,6 @@ export function MemeGenerator() {
       showToast.error("Wystąpił błąd podczas zapisywania mema");
       alert("Wystąpił błąd podczas zapisywania mema: " + (error instanceof Error ? error.message : String(error)));
     }
-  };
-
-  // Funkcja obsługi przeciągania tekstu - poprawiona z uwzględnieniem typów
-  const handleTextDragStart = (
-    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-    textRef: React.RefObject<HTMLDivElement>
-  ) => {
-    return (e: React.MouseEvent | React.KeyboardEvent) => {
-      e.preventDefault();
-      
-      // Pobierz kontener (rodzic elementu tekstowego)
-      const container = textRef.current?.parentElement;
-      if (!container) return;
-      
-      const containerRect = container.getBoundingClientRect();
-      
-      // Początkowe współrzędne - różne dla zdarzeń myszy i klawiatury
-      let startX: number, startY: number;
-      
-      if ('clientX' in e) {
-        // Zdarzenie myszy
-        startX = e.clientX;
-        startY = e.clientY;
-      } else {
-        // Zdarzenie klawiatury - użyj aktualnej pozycji elementu
-        const textRect = textRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-        startX = textRect.left;
-        startY = textRect.top;
-      }
-      
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        moveEvent.preventDefault();
-        
-        // Obliczamy pozycję jako procent szerokości/wysokości kontenera
-        const x = ((moveEvent.clientX - containerRect.left) / containerRect.width) * 100;
-        const y = ((moveEvent.clientY - containerRect.top) / containerRect.height) * 100;
-        
-        // Ograniczamy wartości do zakresu 5-95%, aby tekst nie wychodził poza kontener
-        const clampedX = Math.min(Math.max(x, 5), 95);
-        const clampedY = Math.min(Math.max(y, 5), 95);
-        
-        setPosition({ x: clampedX, y: clampedY });
-      };
-      
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-      
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    };
-  };
-
-  // Funkcja do obsługi zdarzeń klawiatury dla tekstu - poprawiona z uwzględnieniem typów
-  const handleTextKeyDown = (
-    setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-    textRef: React.RefObject<HTMLDivElement>
-  ) => {
-    return (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        // Symuluj kliknięcie, aby rozpocząć przeciąganie
-        const rect = textRef.current?.getBoundingClientRect();
-        if (rect) {
-          // Ustaw pozycję początkową na środek elementu
-          const x = rect.left + rect.width / 2;
-          const y = rect.top + rect.height / 2;
-          
-          // Rozpocznij przeciąganie
-          const container = textRef.current?.parentElement;
-          if (container) {
-            const containerRect = container.getBoundingClientRect();
-            const xPercent = ((x - containerRect.left) / containerRect.width) * 100;
-            const yPercent = ((y - containerRect.top) / containerRect.height) * 100;
-            setPosition({ x: xPercent, y: yPercent });
-          }
-        }
-      }
-    };
   };
 
   return (
@@ -891,13 +750,16 @@ export function MemeGenerator() {
             
             <div className="flex flex-col items-center justify-center">
               <div className="relative">
-                <img
-                  ref={imageRef}
+                <Image
+                  ref={imageRef as any}
                   src={previewUrl}
                   alt="Do kadrowania"
                   onLoad={onImageLoad}
                   className="max-w-full object-contain"
                   style={{ maxHeight: 'calc(85vh - 120px)' }}
+                  width={800}
+                  height={600}
+                  unoptimized={true}
                 />
                 {crop && (
                   <div 

@@ -383,18 +383,28 @@ export function MemeWall() {
           className="bg-black/50 backdrop-blur-sm border-zinc-800/80 hover:bg-black/60 transition-colors"
         >
           <CardContent className="p-6">
-            <MemeDisplay
-              imageUrl={meme.image_url}
-              topText={meme.top_text}
-              bottomText={meme.bottom_text}
-              topPosition={meme.top_position}
-              bottomPosition={meme.bottom_position}
-              topTextSize={2}
-              bottomTextSize={2}
-              topTextColor="#ffffff"
-              bottomTextColor="#ffffff"
-              editable={false}
-            />
+            <div className="relative">
+              <MemeDisplay
+                imageUrl={meme.image_url}
+                topText={meme.top_text}
+                bottomText={meme.bottom_text}
+                topPosition={meme.top_position}
+                bottomPosition={meme.bottom_position}
+                topTextSize={2}
+                bottomTextSize={2}
+                topTextColor="#ffffff"
+                bottomTextColor="#ffffff"
+                editable={false}
+              />
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={() => handleEnlargeMeme(meme)}
+                aria-label="Powiększ mem"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleEnlargeMeme(meme)}
+              ></div>
+            </div>
+
             <div className="mt-4 flex items-center justify-between text-white">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
