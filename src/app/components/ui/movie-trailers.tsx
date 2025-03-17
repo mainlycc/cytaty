@@ -8,6 +8,23 @@ import { Button } from './button'
 import { ChevronLeft, ChevronRight, AlertCircle, PlayCircle, Film, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 
+// Typy danych dla odpowiedzi API
+interface TMDBVideo {
+  id: string
+  key: string
+  name: string
+  site: string
+  type: string
+  official: boolean
+  published_at: string
+}
+
+interface TMDBMovie {
+  id: number
+  title: string
+  poster_path: string
+}
+
 // Typy danych dla zwiastunów
 interface MovieVideo {
   id: string
@@ -86,7 +103,7 @@ export function MovieTrailers() {
         
         // Pobierz zwiastuny dla każdego filmu
         const allVideos: MovieVideo[] = [];
-        const movies = moviesData.results.slice(0, 20); // Pobierz zwiastuny dla 20 popularnych filmów
+        const movies = moviesData.results.slice(0, 20) as TMDBMovie[]; // Pobierz zwiastuny dla 20 popularnych filmów
         
         for (const movie of movies) {
           try {
@@ -96,7 +113,7 @@ export function MovieTrailers() {
               { headers: { 'Accept': 'application/json' } }
             );
             
-            let videosPL: any[] = [];
+            let videosPL: TMDBVideo[] = [];
             if (videosResponsePL.ok) {
               const videosDataPL = await videosResponsePL.json();
               if (videosDataPL.results && Array.isArray(videosDataPL.results)) {
@@ -110,7 +127,7 @@ export function MovieTrailers() {
               { headers: { 'Accept': 'application/json' } }
             );
             
-            let videosEN: any[] = [];
+            let videosEN: TMDBVideo[] = [];
             if (videosResponseEN.ok) {
               const videosDataEN = await videosResponseEN.json();
               if (videosDataEN.results && Array.isArray(videosDataEN.results)) {
@@ -132,11 +149,11 @@ export function MovieTrailers() {
             if (combinedVideos.length > 0) {
               // Filtruj tylko zwiastuny z YouTube i tylko typ "Trailer"
               const youtubeTrailers = combinedVideos.filter(
-                (video: any) => video.site === 'YouTube' && video.type === 'Trailer'
+                (video: TMDBVideo) => video.site === 'YouTube' && video.type === 'Trailer'
               );
               
               // Dodaj informacje o filmie do każdego zwiastuna
-              const movieVideos = youtubeTrailers.map((video: any) => ({
+              const movieVideos = youtubeTrailers.map((video: TMDBVideo) => ({
                 ...video,
                 movie: {
                   id: movie.id,
@@ -206,7 +223,7 @@ export function MovieTrailers() {
         month: 'long', 
         year: 'numeric' 
       }).format(date);
-    } catch (e) {
+    } catch (_) {
       return 'Data nieznana';
     }
   };

@@ -96,7 +96,7 @@ export function NavMenu() {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase.auth, checkAuth])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
