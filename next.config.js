@@ -5,6 +5,7 @@ const nextConfig = {
       'xwifzcgbtreueptsglqk.supabase.co', // Twoja domena Supabase
       'image.tmdb.org', // Dodaj domenę TMDB
       'i.imgflip.com', // Domena z szablonami memów
+      'img.youtube.com', // Domena z miniaturami YouTube
     ],
     remotePatterns: [
       {
@@ -20,6 +21,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'i.imgflip.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
         pathname: '/**',
       },
     ],
