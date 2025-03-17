@@ -223,7 +223,7 @@ export function MovieTrailers() {
         month: 'long', 
         year: 'numeric' 
       }).format(date);
-    } catch (_) {
+    } catch {
       return 'Data nieznana';
     }
   };

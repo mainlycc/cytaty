@@ -6,14 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/app/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/app/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
-import { ChevronDown, LogIn, LogOut, Menu, X, Home, Film, Coffee, BookOpenText, MessageSquare, Video } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
